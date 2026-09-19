@@ -1,0 +1,113 @@
+<%- include('../partials/header') %>
+
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="/reports" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Hub</a>
+      <h1 class="page-title mb-0">Customer Credit &amp; Receivables Report</h1>
+    </div>
+    <p class="page-subtitle mb-0">Customer ledger, outstanding store credit balances, and loyalty distribution</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <a href="/reports/customers?format=csv" class="btn btn-success">
+      <i class="bi bi-file-earmark-excel me-1"></i> Download CSV
+    </a>
+  </div>
+</div>
+
+<!-- Summary Metrics -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="stat-card">
+      <span class="stat-label">Total Customer Base</span>
+      <div class="stat-value text-dark"><%= customers.length %> Profiles</div>
+      <div class="stat-subtext text-muted">Active client directory</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="stat-card">
+      <span class="stat-label">Cumulative Sales Volume</span>
+      <div class="stat-value text-primary">
+        <%= currency %><%= totals.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">All-time transactions</div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="stat-card border-start border-4 <%= totals.totalDue > 0 ? 'border-danger' : 'border-success' %>">
+      <span class="stat-label">Total Receivables (Udhar Due)</span>
+      <div class="stat-value <%= totals.totalDue > 0 ? 'text-danger' : 'text-success' %>">
+        <%= currency %><%= totals.totalDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">
+        <%= totals.debtorCount %> customer<%= totals.debtorCount === 1 ? '' : 's' %> with pending credit balance
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Customers Table -->
+<div class="card border-0 shadow-sm rounded-3">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Customer Name</th>
+            <th>Phone / Contact</th>
+            <th class="text-center">Tier</th>
+            <th class="text-center">Discount</th>
+            <th class="text-end">Lifetime Spent</th>
+            <th class="text-end">Balance Due</th>
+            <th class="text-center pe-4">Credit Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (customers.length === 0) { %>
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                No customer profiles recorded.
+              </td>
+            </tr>
+          <% } else { %>
+            <% customers.forEach(c => { %>
+              <tr>
+                <td class="ps-4 fw-bold">
+                  <a href="/customers/<%= c._id %>" class="text-decoration-none text-dark">
+                    <%= c.name %>
+                  </a>
+                </td>
+                <td class="text-muted small">
+                  <%= c.phone || 'No phone recorded' %>
+                  <% if (c.email) { %><br><small><%= c.email %></small><% } %>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-light text-dark"><%= c.loyaltyTier || 'Standard' %></span>
+                </td>
+                <td class="text-center text-muted">
+                  <%= c.discountPercentage ? `${c.discountPercentage}%` : '0%' %>
+                </td>
+                <td class="text-end fw-semibold text-dark">
+                  <%= currency %><%= (c.totalSpent || 0).toFixed(2) %>
+                </td>
+                <td class="text-end fw-bold <%= (c.outstandingBalance || 0) > 0 ? 'text-danger' : 'text-success' %>">
+                  <%= currency %><%= (c.outstandingBalance || 0).toFixed(2) %>
+                </td>
+                <td class="text-center pe-4">
+                  <% if ((c.outstandingBalance || 0) > 0) { %>
+                    <span class="badge bg-danger-subtle text-danger">Pending Due</span>
+                  <% } else { %>
+                    <span class="badge bg-success-subtle text-success">Cleared</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

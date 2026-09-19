@@ -1,0 +1,285 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Profit Analyser &amp; Margin Intelligence</h1>
+    <p class="page-subtitle">Executive P&amp;L accounting, real-time COGS tracking, operating overhead absorption, and breakeven analytics</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <!-- Timeframe Presets -->
+    <div class="btn-group btn-group-sm" role="group">
+      <a href="/profit?timeframe=today" class="btn <%= timeframe === 'today' ? 'btn-primary' : 'btn-outline-secondary' %>">Today</a>
+      <a href="/profit?timeframe=this_week" class="btn <%= timeframe === 'this_week' ? 'btn-primary' : 'btn-outline-secondary' %>">This Week</a>
+      <a href="/profit?timeframe=this_month" class="btn <%= timeframe === 'this_month' ? 'btn-primary' : 'btn-outline-secondary' %>">This Month</a>
+      <a href="/profit?timeframe=last_month" class="btn <%= timeframe === 'last_month' ? 'btn-primary' : 'btn-outline-secondary' %>">Last Month</a>
+      <a href="/profit?timeframe=this_year" class="btn <%= timeframe === 'this_year' ? 'btn-primary' : 'btn-outline-secondary' %>">This Year</a>
+      <a href="/profit?timeframe=all" class="btn <%= timeframe === 'all' ? 'btn-primary' : 'btn-outline-secondary' %>">All Time</a>
+    </div>
+  </div>
+</div>
+
+<!-- Primary P&L Executive Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Gross Revenue (Turnover)</span>
+      <div class="stat-value text-dark">
+        <%= currency %><%= pnl.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted"><%= pnl.salesCount %> transaction<%= pnl.salesCount === 1 ? '' : 's' %></div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Cost of Goods Sold (COGS)</span>
+      <div class="stat-value text-secondary">
+        <%= currency %><%= pnl.totalCOGS.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">Merchandise procurement cost</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Gross Profit</span>
+      <div class="stat-value <%= pnl.grossProfit >= 0 ? 'text-primary' : 'text-danger' %>">
+        <%= currency %><%= pnl.grossProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext">
+        <span class="badge bg-primary-subtle text-primary fw-semibold"><%= pnl.grossMarginPercent %>% Margin</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Net Operating Profit</span>
+      <div class="stat-value <%= pnl.netProfit >= 0 ? 'text-success' : 'text-danger' %>">
+        <%= pnl.netProfit < 0 ? '-' : '' %><%= currency %><%= Math.abs(pnl.netProfit).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext">
+        <span class="badge <%= pnl.netProfit >= 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' %> fw-semibold">
+          <%= pnl.netProfit >= 0 ? 'Surplus' : 'Deficit' %> &bull; <%= pnl.netMarginPercent %>% Net Margin
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- Left Column: Itemized P&L Waterfall Statement -->
+  <div class="col-12 col-lg-7">
+    <div class="card-business h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-file-earmark-spreadsheet me-1 text-primary"></i> Income Statement (P&amp;L Waterfall)
+        </span>
+        <span class="text-xs text-muted text-capitalize"><%= timeframe.replace('_', ' ') %></span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <tbody>
+              <!-- Revenue -->
+              <tr class="table-light">
+                <td class="ps-3 fw-bold text-dark">1. Gross Sales Revenue</td>
+                <td class="text-end pe-3 fw-bold text-dark">
+                  <%= currency %><%= pnl.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+              </tr>
+              <!-- COGS -->
+              <tr>
+                <td class="ps-4 text-muted">Less: Direct Cost of Goods Sold (COGS)</td>
+                <td class="text-end pe-3 text-danger">
+                  -<%= currency %><%= pnl.totalCOGS.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+              </tr>
+              <!-- Gross Profit -->
+              <tr class="bg-primary-subtle border-top border-bottom">
+                <td class="ps-3 fw-bold text-primary">
+                  = Gross Profit (Gross Margin: <%= pnl.grossMarginPercent %>%)
+                </td>
+                <td class="text-end pe-3 fw-bold text-primary">
+                  <%= currency %><%= pnl.grossProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+              </tr>
+              <!-- OPEX Header -->
+              <tr class="table-light">
+                <td class="ps-3 fw-semibold text-dark">2. Operating Overheads (OPEX)</td>
+                <td class="text-end pe-3 fw-semibold text-danger">
+                  -<%= currency %><%= pnl.totalOpex.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+              </tr>
+              <!-- OPEX Categories -->
+              <% if (expenseCategories && expenseCategories.length > 0) { %>
+                <% expenseCategories.forEach(cat => { %>
+                  <tr>
+                    <td class="ps-4 text-xs text-muted">
+                      &bull; <%= cat._id %>
+                    </td>
+                    <td class="text-end pe-3 text-xs text-muted">
+                      <%= currency %><%= cat.total.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td class="ps-4 text-xs text-muted italic" colspan="2">No operating expenses recorded for this timeframe</td>
+                </tr>
+              <% } %>
+              <!-- Net Operating Profit -->
+              <tr class="<%= pnl.netProfit >= 0 ? 'bg-success-subtle' : 'bg-danger-subtle' %> border-top border-2">
+                <td class="ps-3 fw-bold <%= pnl.netProfit >= 0 ? 'text-success' : 'text-danger' %> py-2">
+                  <i class="bi <%= pnl.netProfit >= 0 ? 'bi-check-circle-fill' : 'bi-exclamation-octagon-fill' %> me-1"></i>
+                  = Net Operating Profit (Net Margin: <%= pnl.netMarginPercent %>%)
+                </td>
+                <td class="text-end pe-3 fw-bold <%= pnl.netProfit >= 0 ? 'text-success' : 'text-danger' %> py-2 fs-6">
+                  <%= pnl.netProfit < 0 ? '-' : '' %><%= currency %><%= Math.abs(pnl.netProfit).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Breakeven & Overhead Absorption -->
+  <div class="col-12 col-lg-5">
+    <div class="card-business h-100">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-shield-check me-1 text-success"></i> Breakeven &amp; Cost Absorption
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="mb-4">
+          <span class="text-xs text-muted d-block text-uppercase fw-semibold">Monthly Fixed Overhead Burn Rate</span>
+          <div class="fs-4 fw-bold text-dark mt-1">
+            <%= currency %><%= breakeven.monthlyFixedOverhead.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+          </div>
+          <span class="text-xs text-muted">Rent, recurring payroll, and utility baselines</span>
+        </div>
+
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-xs text-muted text-uppercase fw-semibold">Sales Breakeven Target</span>
+            <span class="text-xs fw-bold text-primary"><%= breakeven.breakevenProgress %>%</span>
+          </div>
+          <div class="progress" style="height: 10px;">
+            <div 
+              class="progress-bar <%= breakeven.isBreakevenAchieved ? 'bg-success' : 'bg-primary' %>" 
+              role="progressbar" 
+              style="width: <%= Math.min(100, parseFloat(breakeven.breakevenProgress) || 0) %>%"
+            ></div>
+          </div>
+          <div class="d-flex justify-content-between text-xs text-muted mt-1">
+            <span>Turnover: <%= currency %><%= pnl.totalRevenue.toLocaleString('en-IN') %></span>
+            <span>Target: <%= currency %><%= breakeven.breakevenRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 }) %></span>
+          </div>
+        </div>
+
+        <div class="p-3 rounded <%= breakeven.isBreakevenAchieved ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle' %> text-xs">
+          <% if (breakeven.isBreakevenAchieved) { %>
+            <i class="bi bi-trophy-fill me-1"></i>
+            <strong>Breakeven Milestone Achieved!</strong><br>
+            Current turnover surpasses all fixed operational overheads. Additional sales generate pure marginal profit.
+          <% } else { %>
+            <i class="bi bi-info-circle-fill me-1"></i>
+            <strong>Approaching Breakeven</strong><br>
+            Requires <%= currency %><%= Math.max(0, breakeven.breakevenRevenue - pnl.totalRevenue).toLocaleString('en-IN', { maximumFractionDigits: 0 }) %> in additional sales at current <%= pnl.grossMarginPercent %>% margin to fully absorb operating overheads.
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product Margin Leaderboard & Category Contribution -->
+<div class="row g-3">
+  <!-- Top 5 High Margin Products -->
+  <div class="col-12 col-lg-7">
+    <div class="card-business">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-star-fill text-warning me-1"></i> Product Margin Leaderboard
+        </span>
+        <span class="text-xs text-muted">Top grossing merchandise</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Product Name</th>
+                <th class="text-center">Units Sold</th>
+                <th class="text-end">Revenue</th>
+                <th class="text-end">Gross Profit</th>
+                <th class="text-end pe-3">Margin %</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (topProducts && topProducts.length > 0) { %>
+                <% topProducts.forEach(prod => { %>
+                  <tr>
+                    <td class="ps-3 fw-semibold text-dark"><%= prod.name %></td>
+                    <td class="text-center"><%= prod.unitsSold %></td>
+                    <td class="text-end"><%= currency %><%= prod.revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                    <td class="text-end fw-bold text-success"><%= currency %><%= prod.grossProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                    <td class="text-end pe-3">
+                      <span class="badge <%= prod.marginPercent >= 20 ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis' %>">
+                        <%= prod.marginPercent.toFixed(1) %>%
+                      </span>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="5" class="text-center py-4 text-muted">
+                    No product sales recorded in this timeframe.
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Contribution -->
+  <div class="col-12 col-lg-5">
+    <div class="card-business">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-pie-chart-fill text-primary me-1"></i> Category Profit Contribution
+        </span>
+      </div>
+      <div class="card-body">
+        <% if (categoryBreakdown && categoryBreakdown.length > 0) { %>
+          <% categoryBreakdown.forEach(cat => { %>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between text-xs mb-1">
+                <span class="fw-semibold text-dark"><%= cat.name %></span>
+                <span>
+                  <strong class="text-success"><%= currency %><%= cat.profit.toLocaleString('en-IN') %></strong>
+                  <span class="text-muted">(<%= cat.profitSharePercent %>%)</span>
+                </span>
+              </div>
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar bg-primary" style="width: <%= Math.min(100, parseFloat(cat.profitSharePercent) || 0) %>%"></div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="text-center py-4 text-muted text-xs">
+            No category profitability data available for this timeframe.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

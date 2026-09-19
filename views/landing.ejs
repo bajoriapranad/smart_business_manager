@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Business Manager &amp; Profit Analyser</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Custom Business Theme CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .landing-hero {
+      background-color: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 4rem 1rem 3.5rem;
+    }
+    .landing-nav {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      height: 60px;
+    }
+    .feature-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      height: 100%;
+    }
+    .feature-icon-box {
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      background-color: var(--primary-light);
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- Landing Navbar -->
+  <nav class="landing-nav d-flex align-items-center">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a href="/" class="brand-title text-decoration-none">
+        <i class="bi bi-briefcase-fill text-primary"></i>
+        <span>Smart Business Manager</span>
+      </a>
+      <div class="d-flex align-items-center gap-2">
+        <a href="/auth/demo" class="btn btn-sm btn-outline-warning text-dark fw-medium">
+          <i class="bi bi-play-circle me-1"></i> Enter Demo Mode
+        </a>
+        <a href="/auth/login" class="btn btn-sm btn-outline-secondary">
+          Sign In
+        </a>
+        <a href="/auth/register" class="btn btn-sm btn-primary">
+          Create Account
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="landing-hero text-center">
+    <div class="container" style="max-width: 780px;">
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 mb-3">
+        Retail Operations &amp; Profit Intelligence
+      </span>
+      <h1 class="display-6 fw-bold text-dark mb-3">
+        Manage inventory, sales, customers, expenses and profits from one place.
+      </h1>
+      <p class="lead text-muted fs-6 mb-4">
+        Practical, day-to-day business management software for small and medium retail shops. Eliminate spreadsheet chaos, prevent stockouts, and track true net profit.
+      </p>
+
+      <!-- Primary Action Buttons -->
+      <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+        <a href="/auth/demo" class="btn btn-warning px-4 py-2 fw-semibold text-dark shadow-sm">
+          <i class="bi bi-eye-fill me-1"></i> Enter Demo Mode
+        </a>
+        <a href="/auth/register" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
+          <i class="bi bi-arrow-right-circle me-1"></i> Create Business Account
+        </a>
+        <a href="/auth/login" class="btn btn-outline-secondary px-4 py-2 fw-medium">
+          Sign In
+        </a>
+      </div>
+
+      <div class="small text-muted">
+        <i class="bi bi-shield-check text-success me-1"></i> Pre-seeded MongoDB Demo data ready • No credit card required
+      </div>
+    </div>
+  </section>
+
+  <!-- Three Core Pillars -->
+  <section class="py-5">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h5 class="fw-bold text-dark">Engineered for Real Retail Workflows</h5>
+        <p class="text-muted small">Everything needed to run a profitable, organized shop</p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-12 col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon-box">
+              <i class="bi bi-box-seam"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-2">Inventory Management</h6>
+            <p class="text-muted small mb-0">
+              Track real-time stock levels, purchase prices, selling prices, minimum stock alerts, and full stock movement audit trails.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon-box">
+              <i class="bi bi-receipt"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-2">Fast Checkout &amp; CRM</h6>
+            <p class="text-muted small mb-0">
+              Multi-product checkout POS with phone-number customer lookup, automated loyalty discounts, and multiple payment methods.
+            </p>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon-box">
+              <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-2">Accurate Profit Analysis</h6>
+            <p class="text-muted small mb-0">
+              Automatically calculate Cost of Goods Sold (COGS), Gross Profit, operational expenses, electricity bills, and Net Margin.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Capabilities Table -->
+      <div class="card-business mt-4 p-4">
+        <div class="row text-center g-3">
+          <div class="col-6 col-md-3 border-end">
+            <div class="fw-bold text-dark fs-5">100% Isolated</div>
+            <div class="text-muted small">Multi-tenant User Scoping</div>
+          </div>
+          <div class="col-6 col-md-3 border-end">
+            <div class="fw-bold text-dark fs-5">MongoDB Native</div>
+            <div class="text-muted small">Real Database Analytics</div>
+          </div>
+          <div class="col-6 col-md-3 border-end">
+            <div class="fw-bold text-dark fs-5">Live POS</div>
+            <div class="text-muted small">Auto Inventory Decrement</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="fw-bold text-dark fs-5">Instant Demo</div>
+            <div class="text-muted small">Pre-seeded Sandbox Mode</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-4 bg-white border-top text-center text-muted small">
+    <div class="container">
+      <div>Simple business software for day-to-day decision making.</div>
+      <div class="mt-1">&copy; <%= new Date().getFullYear() %> Smart Business Manager &amp; Profit Analyser.</div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap 5 Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

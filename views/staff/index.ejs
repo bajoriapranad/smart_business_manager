@@ -1,0 +1,176 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Staff Roster &amp; Payroll</h1>
+    <p class="page-subtitle">Manage store employees, compensation agreements, monthly payroll schedules, and salary disbursements</p>
+  </div>
+  <div>
+    <a href="/staff/new" class="btn btn-sm btn-primary">
+      <i class="bi bi-person-plus me-1"></i> Add Employee
+    </a>
+  </div>
+</div>
+
+<!-- Payroll KPI Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Staff</span>
+      <div class="stat-value text-dark"><%= summary.totalStaff %></div>
+      <div class="stat-subtext text-muted"><%= summary.activeStaff %> currently active on duty</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Monthly Payroll</span>
+      <div class="stat-value text-primary"><%= currency %><%= summary.monthlyPayroll.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">Committed salary cost / mo</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Disbursed This Month</span>
+      <div class="stat-value text-success"><%= currency %><%= summary.disbursedThisMonth.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">Paid for <%= summary.currentMonth %></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Pending Payroll</span>
+      <% const pendingPayroll = Math.max(0, summary.monthlyPayroll - summary.disbursedThisMonth); %>
+      <div class="stat-value <%= pendingPayroll > 0 ? 'text-danger' : 'text-dark' %>">
+        <%= currency %><%= pendingPayroll.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext <%= pendingPayroll > 0 ? 'text-danger fw-medium' : 'text-muted' %>">
+        <%= pendingPayroll > 0 ? 'Remaining this month' : 'All salaries paid' %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card-business mb-3 p-3">
+  <form action="/staff" method="GET" class="row g-2 align-items-center">
+    <div class="col-12 col-md-5">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+        <input 
+          type="text" 
+          name="search" 
+          class="form-control border-start-0 ps-0" 
+          placeholder="Search by name, phone, or job title..." 
+          value="<%= filters.search %>"
+        >
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <select name="status" class="form-select form-select-sm">
+        <option value="">All Employment Statuses</option>
+        <option value="Active" <%= filters.status === 'Active' ? 'selected' : '' %>>Active</option>
+        <option value="On Leave" <%= filters.status === 'On Leave' ? 'selected' : '' %>>On Leave</option>
+        <option value="Inactive" <%= filters.status === 'Inactive' ? 'selected' : '' %>>Inactive</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <button type="submit" class="btn btn-sm btn-secondary w-100">
+        Filter
+      </button>
+    </div>
+    <% if (filters.search || filters.status) { %>
+      <div class="col-12 col-md-2">
+        <a href="/staff" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-x-circle me-1"></i> Clear
+        </a>
+      </div>
+    <% } %>
+  </form>
+</div>
+
+<!-- Staff Directory Table -->
+<div class="card-business">
+  <div class="card-body p-0">
+    <% if (staffList && staffList.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-business table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Job Position</th>
+              <th>Contact Info</th>
+              <th>Salary Agreement</th>
+              <th>Payout Day</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% staffList.forEach(st => { %>
+              <tr>
+                <td>
+                  <a href="/staff/<%= st._id %>" class="text-dark fw-bold text-decoration-none hover-primary">
+                    <%= st.name %>
+                  </a>
+                  <small class="text-muted d-block" style="font-size: 11px;">
+                    Joined: <%= new Date(st.joiningDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) %>
+                  </small>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border"><%= st.position %></span>
+                </td>
+                <td>
+                  <a href="tel:<%= st.phone %>" class="text-muted text-decoration-none small">
+                    <i class="bi bi-telephone text-primary me-1"></i> <%= st.phone %>
+                  </a>
+                </td>
+                <td>
+                  <span class="fw-bold text-dark"><%= currency %><%= st.salary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                  <small class="text-muted">/ <%= st.salaryFrequency.toLowerCase() %></small>
+                </td>
+                <td class="text-muted small">
+                  Day <%= st.paymentDay %> of month
+                </td>
+                <td>
+                  <% if (st.status === 'Active') { %>
+                    <span class="badge-status status-paid">Active</span>
+                  <% } else if (st.status === 'On Leave') { %>
+                    <span class="badge-status status-warning">On Leave</span>
+                  <% } else { %>
+                    <span class="badge bg-secondary text-white">Inactive</span>
+                  <% } %>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <a href="/staff/<%= st._id %>" class="btn btn-outline-secondary" title="View Profile & Payroll">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="/staff/<%= st._id %>/edit" class="btn btn-outline-secondary" title="Edit Employee">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty-state py-5 text-center">
+        <i class="bi bi-people-fill fs-1 text-secondary mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark">No Staff Members Found</h5>
+        <p class="text-muted small mb-4">
+          <% if (filters.search || filters.status) { %>
+            No staff records matched your filter criteria.
+          <% } else { %>
+            Add your store employees, manage monthly compensation, and record salary vouchers.
+          <% } %>
+        </p>
+        <a href="/staff/new" class="btn btn-sm btn-primary">
+          <i class="bi bi-person-plus me-1"></i> Add First Employee
+        </a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

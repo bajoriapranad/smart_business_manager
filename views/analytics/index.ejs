@@ -1,0 +1,352 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Sales &amp; Business Analytics</h1>
+    <p class="page-subtitle">Visual commerce intelligence: revenue trajectories, peak trading hours, payment splits, and stock velocity</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <!-- Timeframe Presets -->
+    <div class="btn-group btn-group-sm" role="group">
+      <a href="/analytics?timeframe=7days" class="btn <%= timeframe === '7days' ? 'btn-primary' : 'btn-outline-secondary' %>">7 Days</a>
+      <a href="/analytics?timeframe=30days" class="btn <%= timeframe === '30days' ? 'btn-primary' : 'btn-outline-secondary' %>">30 Days</a>
+      <a href="/analytics?timeframe=90days" class="btn <%= timeframe === '90days' ? 'btn-primary' : 'btn-outline-secondary' %>">90 Days</a>
+      <a href="/analytics?timeframe=this_year" class="btn <%= timeframe === 'this_year' ? 'btn-primary' : 'btn-outline-secondary' %>">This Year</a>
+      <a href="/analytics?timeframe=all" class="btn <%= timeframe === 'all' ? 'btn-primary' : 'btn-outline-secondary' %>">All Time</a>
+    </div>
+  </div>
+</div>
+
+<!-- Core Commercial KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Turnover</span>
+      <div class="stat-value text-dark">
+        <%= currency %><%= kpis.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">Gross sales across period</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Transactions</span>
+      <div class="stat-value text-primary">
+        <%= kpis.totalOrders.toLocaleString('en-IN') %>
+      </div>
+      <div class="stat-subtext text-muted">Completed customer checkouts</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Average Order Value (AOV)</span>
+      <div class="stat-value text-success">
+        <%= currency %><%= kpis.aov %>
+      </div>
+      <div class="stat-subtext text-muted">Average customer basket spend</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Merchandise Volume</span>
+      <div class="stat-value text-info">
+        <%= kpis.totalUnitsSold.toLocaleString('en-IN') %> <span class="fs-6 fw-normal text-muted">units</span>
+      </div>
+      <div class="stat-subtext text-muted">Total physical products moved</div>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Charts Row 1: Daily Revenue Trend & Payment Methods Split -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-8">
+    <div class="card-business h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-graph-up me-1 text-primary"></i> Daily Sales &amp; Volume Trajectory
+        </span>
+        <span class="text-xs text-muted">Revenue trend</span>
+      </div>
+      <div class="card-body">
+        <canvas id="revenueTrendChart" height="130"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card-business h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-pie-chart me-1 text-success"></i> Payment Channels
+        </span>
+        <span class="text-xs text-muted">Revenue share</span>
+      </div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center">
+        <div style="max-height: 200px; width: 100%;">
+          <canvas id="paymentMethodsChart"></canvas>
+        </div>
+        <div class="w-100 mt-3">
+          <% paymentMethods.forEach(pm => { %>
+            <div class="d-flex justify-content-between text-xs py-1 border-bottom">
+              <span class="fw-medium text-dark"><%= pm.method %></span>
+              <span>
+                <strong><%= currency %><%= pm.revenue.toLocaleString('en-IN') %></strong>
+                <span class="text-muted">(<%= pm.percentage %>%)</span>
+              </span>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Charts Row 2: Peak Trading Hours & Customer Split -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-8">
+    <div class="card-business h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-clock-history me-1 text-warning"></i> Peak Footfall &amp; Trading Hours
+        </span>
+        <span class="text-xs text-muted">24-hour checkout distribution</span>
+      </div>
+      <div class="card-body">
+        <canvas id="peakHoursChart" height="130"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card-business h-100">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-people me-1 text-info"></i> Customer Cohort Split
+        </span>
+      </div>
+      <div class="card-body">
+        <% if (customerSplit && customerSplit.length > 0) { %>
+          <% customerSplit.forEach(cs => { %>
+            <div class="p-3 bg-light rounded mb-2 border">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold text-dark text-sm"><%= cs._id %></span>
+                <span class="badge bg-primary-subtle text-primary"><%= cs.orders %> order<%= cs.orders === 1 ? '' : 's' %></span>
+              </div>
+              <div class="d-flex justify-content-between text-xs text-muted">
+                <span>Revenue Contribution:</span>
+                <strong class="text-dark"><%= currency %><%= cs.revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></strong>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="text-center py-4 text-muted text-xs">No customer sales recorded yet.</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Inventory Velocity Intelligence -->
+<div class="row g-3">
+  <!-- Fast Moving Velocity Heroes -->
+  <div class="col-12 col-lg-6">
+    <div class="card-business h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Fast-Moving Inventory Heroes
+        </span>
+        <span class="text-xs text-muted">Highest volume moved</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Product Name</th>
+                <th class="text-center">Units Sold</th>
+                <th class="text-end pe-3">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (fastMovingProducts && fastMovingProducts.length > 0) { %>
+                <% fastMovingProducts.forEach(prod => { %>
+                  <tr>
+                    <td class="ps-3 fw-semibold text-dark"><%= prod.name %></td>
+                    <td class="text-center">
+                      <span class="badge bg-success-subtle text-success fw-bold"><%= prod.unitsSold %> units</span>
+                    </td>
+                    <td class="text-end pe-3 fw-bold text-dark">
+                      <%= currency %><%= prod.revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="3" class="text-center py-4 text-muted text-xs">No product sales in this timeframe.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slow-Moving & Dead Stock Watchlist -->
+  <div class="col-12 col-lg-6">
+    <div class="card-business h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-hourglass-bottom text-danger me-1"></i> Stagnant &amp; Dead Stock Watchlist
+        </span>
+        <span class="text-xs text-danger fw-semibold">
+          Locked: <%= currency %><%= kpis.totalDeadStockValue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+        </span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Unsold Merchandise</th>
+                <th class="text-center">Stock Held</th>
+                <th class="text-end pe-3">Capital Tied Up</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (deadStockProducts && deadStockProducts.length > 0) { %>
+                <% deadStockProducts.forEach(prod => { %>
+                  <tr>
+                    <td class="ps-3">
+                      <div class="fw-semibold text-dark"><%= prod.name %></div>
+                      <span class="text-muted text-xs"><%= prod.category?.name || 'General' %></span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-light text-secondary border"><%= prod.currentStock %> in stock</span>
+                    </td>
+                    <td class="text-end pe-3 fw-bold text-danger">
+                      <%= currency %><%= prod.stockValue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="3" class="text-center py-4 text-success text-xs">
+                    <i class="bi bi-check-circle-fill me-1"></i> All inventory is moving actively! No dead stock detected.
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  (function() {
+    // 1. Daily Revenue & Volume Trajectory Chart
+    const dailyData = <%- JSON.stringify(dailyTrends || []) %>;
+    const trendCtx = document.getElementById('revenueTrendChart')?.getContext('2d');
+    if (trendCtx && dailyData.length > 0) {
+      new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: dailyData.map(d => d._id),
+          datasets: [
+            {
+              label: 'Revenue (<%= currency %>)',
+              data: dailyData.map(d => d.revenue),
+              borderColor: '#0d6efd',
+              backgroundColor: 'rgba(13, 110, 253, 0.08)',
+              fill: true,
+              tension: 0.3,
+              yAxisID: 'y',
+            },
+            {
+              label: 'Orders Count',
+              data: dailyData.map(d => d.orders),
+              borderColor: '#198754',
+              backgroundColor: '#198754',
+              type: 'bar',
+              barThickness: 12,
+              yAxisID: 'y1',
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              ticks: { callback: v => '<%= currency %>' + v }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { stepSize: 1 }
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Payment Methods Doughnut Chart
+    const paymentData = <%- JSON.stringify(paymentMethods || []) %>;
+    const payCtx = document.getElementById('paymentMethodsChart')?.getContext('2d');
+    if (payCtx && paymentData.length > 0) {
+      new Chart(payCtx, {
+        type: 'doughnut',
+        data: {
+          labels: paymentData.map(p => p.method),
+          datasets: [{
+            data: paymentData.map(p => p.revenue),
+            backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#6f42c1', '#6c757d'],
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    // 3. Peak Footfall Hours Chart
+    const hourlyData = <%- JSON.stringify(hourlyChartData || []) %>;
+    const peakCtx = document.getElementById('peakHoursChart')?.getContext('2d');
+    if (peakCtx && hourlyData.length > 0) {
+      new Chart(peakCtx, {
+        type: 'bar',
+        data: {
+          labels: hourlyData.map(h => h.hour),
+          datasets: [{
+            label: 'Transactions',
+            data: hourlyData.map(h => h.orders),
+            backgroundColor: '#ffc107',
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { ticks: { stepSize: 1 } }
+          }
+        }
+      });
+    }
+  })();
+</script>
+
+<%- include('../partials/footer') %>

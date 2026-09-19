@@ -1,0 +1,369 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <%= staff.name %>
+      <% if (staff.status === 'Active') { %>
+        <span class="badge-status status-paid fs-6 ms-2">Active</span>
+      <% } else if (staff.status === 'On Leave') { %>
+        <span class="badge-status status-warning fs-6 ms-2">On Leave</span>
+      <% } else { %>
+        <span class="badge bg-secondary text-white fs-6 ms-2">Inactive</span>
+      <% } %>
+    </h1>
+    <p class="page-subtitle"><%= staff.position %> &bull; Joined on <%= new Date(staff.joiningDate).toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' }) %></p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/staff" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Staff Roster
+    </a>
+    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#disburseSalaryModal">
+      <i class="bi bi-cash-coin me-1"></i> Disburse Salary
+    </button>
+    <a href="/staff/<%= staff._id %>/edit" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-pencil me-1"></i> Edit Profile
+    </a>
+    <button 
+      type="button" 
+      class="btn btn-sm btn-outline-danger" 
+      onclick="confirmDeleteStaff('<%= staff._id %>', '<%= staff.name %>', <%= payments.length %>)"
+    >
+      <i class="bi bi-trash me-1"></i> Delete
+    </button>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: Profile & Salary Agreement -->
+  <div class="col-12 col-lg-5">
+    <!-- Employment Details -->
+    <div class="card-business mb-4">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-person-lines-fill me-1 text-primary"></i> Employment Information
+        </span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-business mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted" style="width: 40%;">Phone Number</td>
+              <td>
+                <a href="tel:<%= staff.phone %>" class="text-dark fw-bold text-decoration-none">
+                  <i class="bi bi-telephone text-primary me-1"></i> <%= staff.phone %>
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Job Role / Position</td>
+              <td><span class="badge bg-light text-dark border"><%= staff.position %></span></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Joining Date</td>
+              <td><%= new Date(staff.joiningDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Pay Frequency</td>
+              <td><%= staff.salaryFrequency %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Scheduled Pay Day</td>
+              <td>Day <%= staff.paymentDay %> of every month</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Notes / Bank Info</td>
+              <td class="small"><%= staff.notes || '—' %></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Compensation & Lifetime Payroll Summary -->
+    <div class="card-business">
+      <div class="card-header bg-light">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-wallet2 me-1 text-success"></i> Compensation &amp; Payouts
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="p-3 bg-light rounded-2 border mb-3">
+          <span class="text-muted small d-block mb-1">Agreed Base Salary</span>
+          <h3 class="fw-bold text-dark mb-0">
+            <%= currency %><%= staff.salary.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+            <small class="text-muted fs-6 fw-normal">/ <%= staff.salaryFrequency.toLowerCase() %></small>
+          </h3>
+        </div>
+
+        <div class="p-3 rounded-2 border bg-success-subtle border-success-subtle">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-success fw-semibold">Lifetime Salaries Disbursed:</span>
+            <span class="badge bg-success text-white"><%= payments.length %> Vouchers</span>
+          </div>
+          <h3 class="fw-bold text-success mb-0">
+            <%= currency %><%= totalDisbursed.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+          </h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Payroll History -->
+  <div class="col-12 col-lg-7">
+    <div class="card-business">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-clock-history me-1 text-primary"></i> Payroll Disbursement History
+        </span>
+        <span class="badge bg-light text-muted border"><%= payments ? payments.length : 0 %> Vouchers</span>
+      </div>
+      <div class="card-body p-0">
+        <% if (payments && payments.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-business table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Period Month</th>
+                  <th>Payment Date</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% payments.forEach(p => { %>
+                  <tr>
+                    <td class="fw-bold text-dark">
+                      <%= p.forMonth %>
+                    </td>
+                    <td class="text-muted small">
+                      <%= new Date(p.paymentDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                    </td>
+                    <td class="fw-bold text-success">
+                      <%= currency %><%= p.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border" style="font-size: 10px;"><%= p.paymentMethod %></span>
+                    </td>
+                    <td>
+                      <span class="badge-status status-paid">Paid</span>
+                    </td>
+                    <td class="text-end">
+                      <button 
+                        type="button" 
+                        class="btn btn-xs btn-outline-danger" 
+                        title="Void Salary Voucher"
+                        onclick="confirmDeleteVoucher('<%= p._id %>', '<%= p.forMonth %>', <%= p.amount %>)"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="p-5 text-center text-muted small">
+            <i class="bi bi-cash-stack fs-2 d-block mb-2 text-secondary"></i>
+            No salary disbursement vouchers logged for this employee yet.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Disburse Salary -->
+<div class="modal fade" id="disburseSalaryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/staff/<%= staff._id %>/payments" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-dark">
+            <i class="bi bi-cash-coin me-2 text-success"></i> Disburse Employee Salary
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 bg-light rounded-2 border mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Employee Name:</span>
+              <span class="fw-bold text-dark"><%= staff.name %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Position:</span>
+              <span class="fw-semibold text-dark"><%= staff.position %></span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Base Salary:</span>
+              <span class="fw-bold text-primary"><%= currency %><%= staff.salary.toFixed(2) %></span>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-6">
+              <label for="forMonth" class="form-label fw-semibold text-dark required-field">Period Month (YYYY-MM)</label>
+              <input 
+                type="month" 
+                class="form-control form-control-sm" 
+                id="forMonth" 
+                name="forMonth" 
+                value="<%= currentMonth %>" 
+                required
+              >
+            </div>
+            <div class="col-6">
+              <label for="paymentDate" class="form-label fw-semibold text-dark">Payment Date</label>
+              <input 
+                type="date" 
+                class="form-control form-control-sm" 
+                id="paymentDate" 
+                name="paymentDate" 
+                value="<%= today %>"
+              >
+            </div>
+            <div class="col-6">
+              <label for="amount" class="form-label fw-semibold text-dark required-field">Disbursed Amount</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><%= currency %></span>
+                <input 
+                  type="number" 
+                  class="form-control text-end fw-bold text-success" 
+                  id="amount" 
+                  name="amount" 
+                  min="1" 
+                  step="0.01" 
+                  value="<%= staff.salary.toFixed(2) %>" 
+                  required
+                >
+              </div>
+            </div>
+            <div class="col-6">
+              <label for="paymentMethod" class="form-label fw-semibold text-dark">Payment Mode</label>
+              <select name="paymentMethod" id="paymentMethod" class="form-select form-select-sm">
+                <option value="Bank Transfer" selected>Bank Transfer (NEFT/IMPS)</option>
+                <option value="UPI">UPI / GPay / PhonePe</option>
+                <option value="Cash">Cash</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label for="notes" class="form-label fw-semibold text-dark">Disbursement Remarks</label>
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="notes" 
+                name="notes" 
+                placeholder="e.g. Regular monthly salary, bonus, attendance adjustment..."
+              >
+            </div>
+          </div>
+
+          <div class="alert alert-info py-2 small mt-3 mb-0">
+            <i class="bi bi-info-circle me-1"></i> Disbursing this salary voucher will automatically record an operating expense under "Salary" to ensure accurate business P&amp;L reporting.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-success">
+            <i class="bi bi-check-circle me-1"></i> Confirm &amp; Disburse
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Void Voucher Confirmation -->
+<div class="modal fade" id="deleteVoucherModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i> Void Salary Voucher
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-2">Are you sure you want to void the salary voucher for <strong id="voucherMonth" class="text-dark"></strong> (<span id="voucherAmount"></span>)?</p>
+        <div class="alert alert-warning py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i> Voiding this voucher will also remove the synchronized salary expense from business operating expenses.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteVoucherForm" method="POST" action="">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="btn btn-sm btn-danger">Confirm Void</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Delete Staff Confirmation -->
+<div class="modal fade" id="deleteStaffModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i> Delete Staff Record
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-2">Are you sure you want to delete <strong id="deleteStaffName" class="text-dark"></strong>?</p>
+        <div id="deleteWarningVouchers" class="alert alert-danger py-2 small mb-0 d-none">
+          <i class="bi bi-x-circle me-1"></i> This employee has recorded salary vouchers. Change their status to "Inactive" instead to retain payroll audit trails.
+        </div>
+        <div id="deleteNormalStaffWarning" class="alert alert-warning py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i> Once deleted, this staff record will be completely removed from the roster.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteStaffForm" method="POST" action="">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="btn btn-sm btn-danger" id="deleteStaffBtn">Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function confirmDeleteVoucher(paymentId, month, amount) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteVoucherModal'));
+    document.getElementById('voucherMonth').textContent = month;
+    document.getElementById('voucherAmount').textContent = '<%= currency %>' + amount.toFixed(2);
+    document.getElementById('deleteVoucherForm').action = '/staff/payments/' + paymentId + '?_method=DELETE';
+    modal.show();
+  }
+
+  function confirmDeleteStaff(id, name, voucherCount) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteStaffModal'));
+    document.getElementById('deleteStaffName').textContent = name;
+    document.getElementById('deleteStaffForm').action = '/staff/' + id + '?_method=DELETE';
+
+    const warnVouchers = document.getElementById('deleteWarningVouchers');
+    const warnNormal = document.getElementById('deleteNormalStaffWarning');
+    const deleteBtn = document.getElementById('deleteStaffBtn');
+
+    if (voucherCount > 0) {
+      warnVouchers.classList.remove('d-none');
+      warnNormal.classList.add('d-none');
+      deleteBtn.disabled = true;
+    } else {
+      warnVouchers.classList.add('d-none');
+      warnNormal.classList.remove('d-none');
+      deleteBtn.disabled = false;
+    }
+
+    modal.show();
+  }
+</script>
+
+<%- include('../partials/footer') %>

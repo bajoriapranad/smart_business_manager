@@ -1,0 +1,578 @@
+<%- include('../partials/header') %>
+
+<div class="pos-container mb-4">
+  <!-- POS Navigation Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+    <div class="d-flex align-items-center gap-3">
+      <h2 class="h5 fw-bold text-dark mb-0">
+        <i class="bi bi-calculator-fill text-primary me-2"></i> POS Billing Terminal
+      </h2>
+      <span class="badge bg-light text-dark border px-2 py-1">
+        Invoice: <strong id="currentInvoiceNumber"><%= suggestedInvoiceNumber %></strong>
+      </span>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/sales" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-receipt me-1"></i> Sales History
+      </a>
+      <button type="button" class="btn btn-sm btn-outline-danger" id="clearCartBtn">
+        <i class="bi bi-trash me-1"></i> Clear Cart
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Left Column: Product Search, Categories & Catalog Grid -->
+    <div class="col-12 col-lg-7">
+      <div class="card-business h-100 p-3">
+        <!-- Search & Scan Bar -->
+        <div class="mb-3">
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0 text-primary">
+              <i class="bi bi-upc-scan fs-5"></i>
+            </span>
+            <input 
+              type="text" 
+              id="posSearchInput" 
+              class="form-control form-control-lg border-start-0 ps-0" 
+              placeholder="Scan barcode, enter SKU, or search product name..." 
+              autofocus
+            >
+            <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Filter Tabs -->
+        <div class="d-flex gap-1 overflow-x-auto pb-2 mb-3 category-pill-container">
+          <button type="button" class="btn btn-xs btn-primary category-pill active" data-category="all">
+            All Products (<%= products.length %>)
+          </button>
+          <% categories.forEach(cat => { %>
+            <button type="button" class="btn btn-xs btn-outline-secondary category-pill" data-category="<%= cat._id %>">
+              <%= cat.name %>
+            </button>
+          <% }); %>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="product-grid" id="productGrid">
+          <% products.forEach(p => { 
+            const isOutOfStock = p.currentStock <= 0;
+            const isLowStock = p.currentStock > 0 && p.currentStock <= p.minimumStock;
+          %>
+            <div 
+              class="product-pos-card <%= isOutOfStock ? 'out-of-stock' : '' %>"
+              data-id="<%= p._id %>"
+              data-name="<%= p.name %>"
+              data-sku="<%= p.sku %>"
+              data-barcode="<%= p.barcode || '' %>"
+              data-price="<%= p.sellingPrice %>"
+              data-cost="<%= p.purchasePrice %>"
+              data-stock="<%= p.currentStock %>"
+              data-unit="<%= p.unit %>"
+              data-category="<%= p.category ? (p.category._id || p.category) : '' %>"
+              onclick="<%= isOutOfStock ? '' : `addToCart('${p._id}')` %>"
+            >
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <span class="product-pos-name fw-semibold text-dark"><%= p.name %></span>
+                <% if (isOutOfStock) { %>
+                  <span class="badge bg-danger text-white" style="font-size: 9px;">Out of Stock</span>
+                <% } else if (isLowStock) { %>
+                  <span class="badge bg-warning text-dark" style="font-size: 9px;">Low: <%= p.currentStock %></span>
+                <% } else { %>
+                  <span class="badge bg-light text-muted border" style="font-size: 9px;"><%= p.currentStock %> <%= p.unit %></span>
+                <% } %>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-2">
+                <span class="product-pos-price fw-bold text-primary fs-6">
+                  <%= currency %><%= p.sellingPrice.toFixed(2) %>
+                </span>
+                <small class="text-muted" style="font-size: 10px;">SKU: <%= p.sku %></small>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Cart, Customer Selector & Checkout -->
+    <div class="col-12 col-lg-5">
+      <div class="card-business p-3 sticky-top" style="top: 80px;">
+        <!-- Customer Selector -->
+        <div class="mb-3 pb-3 border-bottom">
+          <label class="form-label small fw-semibold text-dark mb-1">
+            <i class="bi bi-person me-1 text-primary"></i> Customer / Loyalty Profile
+          </label>
+          <div class="row g-2">
+            <div class="col-8">
+              <select id="posCustomerSelect" class="form-select form-select-sm">
+                <option value="" data-discount="0" data-loyalty="Standard">Walk-in Customer (0% Discount)</option>
+                <% customers.forEach(c => { %>
+                  <option 
+                    value="<%= c._id %>" 
+                    data-name="<%= c.name %>"
+                    data-phone="<%= c.phone %>"
+                    data-discount="<%= c.discountPercentage %>"
+                    data-loyalty="<%= c.loyaltyLevel %>"
+                    data-due="<%= c.outstandingBalance %>"
+                  >
+                    <%= c.name %> (<%= c.phone %>) &bull; <%= c.loyaltyLevel %> (<%= c.discountPercentage %>% Off)
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-4">
+              <span class="badge bg-light text-dark border w-100 py-2 text-center d-block" id="loyaltyBadge">
+                Standard
+              </span>
+            </div>
+          </div>
+          <div id="customerDueAlert" class="small text-danger mt-1 d-none">
+            <i class="bi bi-exclamation-circle me-1"></i> Customer has outstanding credit balance: <strong id="customerDueAmt"><%= currency %>0.00</strong>
+          </div>
+        </div>
+
+        <!-- Cart Items List -->
+        <div class="pos-cart-items mb-3" id="cartContainer">
+          <div class="text-center text-muted py-5" id="emptyCartMessage">
+            <i class="bi bi-cart3 fs-1 text-secondary mb-2 d-block"></i>
+            <span class="small">Cart is currently empty.</span><br>
+            <span class="text-muted" style="font-size: 11px;">Click any item from the catalog or scan barcode to add.</span>
+          </div>
+
+          <div class="table-responsive d-none" id="cartTableWrapper">
+            <table class="table table-sm align-middle mb-0" id="cartTable">
+              <thead>
+                <tr class="text-muted" style="font-size: 11px;">
+                  <th>Item</th>
+                  <th style="width: 100px;" class="text-center">Qty</th>
+                  <th style="width: 80px;" class="text-end">Price</th>
+                  <th style="width: 80px;" class="text-end">Total</th>
+                  <th style="width: 30px;"></th>
+                </tr>
+              </thead>
+              <tbody id="cartTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="bg-light p-3 rounded-2 border mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1 small text-muted">
+            <span>Subtotal:</span>
+            <span class="fw-semibold text-dark" id="displaySubtotal"><%= currency %>0.00</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-1 small">
+            <span class="text-muted">Loyalty Discount (<span id="displayDiscountPercent">0</span>%):</span>
+            <span class="fw-semibold text-success" id="displayDiscountAmount">- <%= currency %>0.00</span>
+          </div>
+          <hr class="my-2 text-muted opacity-25">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-dark fs-6">Payable Total:</span>
+            <span class="fw-bold fs-4 text-primary" id="displayFinalTotal"><%= currency %>0.00</span>
+          </div>
+        </div>
+
+        <!-- Payment Method & Tender Amount -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-dark mb-1">Payment Method</label>
+          <div class="btn-group w-100 mb-2" role="group" id="paymentMethodGroup">
+            <input type="radio" class="btn-check" name="paymentMethodRadio" id="payCash" value="Cash" checked>
+            <label class="btn btn-sm btn-outline-secondary" for="payCash"><i class="bi bi-cash me-1"></i> Cash</label>
+
+            <input type="radio" class="btn-check" name="paymentMethodRadio" id="payUPI" value="UPI">
+            <label class="btn btn-sm btn-outline-secondary" for="payUPI"><i class="bi bi-qr-code me-1"></i> UPI</label>
+
+            <input type="radio" class="btn-check" name="paymentMethodRadio" id="payCard" value="Card">
+            <label class="btn btn-sm btn-outline-secondary" for="payCard"><i class="bi bi-credit-card me-1"></i> Card</label>
+
+            <input type="radio" class="btn-check" name="paymentMethodRadio" id="payCredit" value="Credit">
+            <label class="btn btn-sm btn-outline-secondary" for="payCredit"><i class="bi bi-journal-text me-1"></i> Credit</label>
+          </div>
+
+          <div class="row g-2 align-items-center">
+            <div class="col-7">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><%= currency %></span>
+                <input 
+                  type="number" 
+                  id="paidAmountInput" 
+                  class="form-control text-end fw-bold" 
+                  min="0" 
+                  step="0.01" 
+                  value="0.00" 
+                  placeholder="Amount Tendered"
+                >
+              </div>
+            </div>
+            <div class="col-5">
+              <button type="button" class="btn btn-sm btn-outline-primary w-100" id="exactAmountBtn">
+                Exact Total
+              </button>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-1 small" id="changeReturnWrapper">
+            <span class="text-muted" id="changeLabel">Change Due:</span>
+            <span class="fw-bold text-success" id="displayChangeAmount"><%= currency %>0.00</span>
+          </div>
+        </div>
+
+        <!-- Checkout Action Button -->
+        <button type="button" class="btn btn-primary btn-lg w-100 shadow-sm" id="completeSaleBtn" disabled>
+          <i class="bi bi-check2-circle me-1"></i> Complete Sale &amp; Print Bill
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .product-pos-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    user-select: none;
+  }
+  .product-pos-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+  }
+  .product-pos-card.out-of-stock {
+    opacity: 0.55;
+    background: #f8fafc;
+    cursor: not-allowed;
+  }
+  .product-pos-name {
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .pos-cart-items {
+    max-height: 250px;
+    overflow-y: auto;
+  }
+  .category-pill-container::-webkit-scrollbar {
+    height: 4px;
+  }
+</style>
+
+<script>
+  const CURRENCY = '<%= currency %>';
+  const PRODUCTS_DATA = <%- JSON.stringify(products) %>;
+  let cart = []; // Array of { product: id, name, unitPrice, purchasePrice, quantity, stock, unit }
+
+  function formatMoney(amount) {
+    return CURRENCY + (amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function addToCart(productId) {
+    const prod = PRODUCTS_DATA.find(p => p._id === productId);
+    if (!prod) return;
+
+    const existing = cart.find(item => item.product === productId);
+    if (existing) {
+      if (existing.quantity + 1 > prod.currentStock) {
+        alert(`Cannot add more. Only ${prod.currentStock} ${prod.unit} available in stock.`);
+        return;
+      }
+      existing.quantity += 1;
+    } else {
+      if (prod.currentStock < 1) {
+        alert('Item is currently out of stock.');
+        return;
+      }
+      cart.push({
+        product: prod._id,
+        name: prod.name,
+        unitPrice: prod.sellingPrice,
+        purchasePrice: prod.purchasePrice || 0,
+        quantity: 1,
+        stock: prod.currentStock,
+        unit: prod.unit,
+      });
+    }
+
+    renderCart();
+  }
+
+  function updateQuantity(productId, delta) {
+    const item = cart.find(i => i.product === productId);
+    if (!item) return;
+
+    const nextQty = item.quantity + delta;
+    if (nextQty <= 0) {
+      cart = cart.filter(i => i.product !== productId);
+    } else if (nextQty > item.stock) {
+      alert(`Max available stock is ${item.stock} ${item.unit}.`);
+      return;
+    } else {
+      item.quantity = nextQty;
+    }
+
+    renderCart();
+  }
+
+  function removeItem(productId) {
+    cart = cart.filter(i => i.product !== productId);
+    renderCart();
+  }
+
+  function renderCart() {
+    const emptyMsg = document.getElementById('emptyCartMessage');
+    const tableWrapper = document.getElementById('cartTableWrapper');
+    const tbody = document.getElementById('cartTbody');
+    const checkoutBtn = document.getElementById('completeSaleBtn');
+
+    if (cart.length === 0) {
+      emptyMsg.classList.remove('d-none');
+      tableWrapper.classList.add('d-none');
+      checkoutBtn.disabled = true;
+      tbody.innerHTML = '';
+      recalculateTotals();
+      return;
+    }
+
+    emptyMsg.classList.add('d-none');
+    tableWrapper.classList.remove('d-none');
+    checkoutBtn.disabled = false;
+
+    tbody.innerHTML = cart.map(item => `
+      <tr>
+        <td>
+          <span class="fw-semibold text-dark d-block" style="font-size: 12px;">${item.name}</span>
+          <small class="text-muted">${formatMoney(item.unitPrice)} / ${item.unit}</small>
+        </td>
+        <td class="text-center">
+          <div class="input-group input-group-sm">
+            <button class="btn btn-outline-secondary px-1 py-0" onclick="updateQuantity('${item.product}', -1)">-</button>
+            <span class="form-control text-center px-1 py-0 fw-bold" style="font-size: 12px;">${item.quantity}</span>
+            <button class="btn btn-outline-secondary px-1 py-0" onclick="updateQuantity('${item.product}', 1)">+</button>
+          </div>
+        </td>
+        <td class="text-end small">${formatMoney(item.unitPrice)}</td>
+        <td class="text-end fw-bold small text-dark">${formatMoney(item.unitPrice * item.quantity)}</td>
+        <td class="text-center">
+          <button class="btn btn-sm text-danger p-0" onclick="removeItem('${item.product}')">
+            <i class="bi bi-x fs-5"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    recalculateTotals();
+  }
+
+  function getSelectedDiscount() {
+    const custSelect = document.getElementById('posCustomerSelect');
+    const opt = custSelect.options[custSelect.selectedIndex];
+    return parseFloat(opt.dataset.discount) || 0;
+  }
+
+  function recalculateTotals() {
+    const subtotal = cart.reduce((acc, it) => acc + (it.unitPrice * it.quantity), 0);
+    const discountPercent = getSelectedDiscount();
+    const discountAmount = (subtotal * discountPercent) / 100;
+    const finalTotal = Math.max(0, subtotal - discountAmount);
+
+    document.getElementById('displaySubtotal').textContent = formatMoney(subtotal);
+    document.getElementById('displayDiscountPercent').textContent = discountPercent;
+    document.getElementById('displayDiscountAmount').textContent = '- ' + formatMoney(discountAmount);
+    document.getElementById('displayFinalTotal').textContent = formatMoney(finalTotal);
+
+    // Calculate change / credit due
+    const paidInput = document.getElementById('paidAmountInput');
+    const method = document.querySelector('input[name="paymentMethodRadio"]:checked')?.value || 'Cash';
+
+    let paidVal = parseFloat(paidInput.value);
+    if (isNaN(paidVal) || paidVal < 0) paidVal = 0;
+
+    const diff = paidVal - finalTotal;
+    const changeLabel = document.getElementById('changeLabel');
+    const changeDisplay = document.getElementById('displayChangeAmount');
+
+    if (method === 'Credit') {
+      changeLabel.textContent = 'Credit Balance Due:';
+      changeDisplay.className = 'fw-bold text-danger';
+      changeDisplay.textContent = formatMoney(Math.max(0, finalTotal - paidVal));
+    } else {
+      if (diff >= 0) {
+        changeLabel.textContent = 'Change to Return:';
+        changeDisplay.className = 'fw-bold text-success';
+        changeDisplay.textContent = formatMoney(diff);
+      } else {
+        changeLabel.textContent = 'Underpaid Due:';
+        changeDisplay.className = 'fw-bold text-danger';
+        changeDisplay.textContent = formatMoney(Math.abs(diff));
+      }
+    }
+  }
+
+  // Exact Total Button
+  document.getElementById('exactAmountBtn').addEventListener('click', function () {
+    const subtotal = cart.reduce((acc, it) => acc + (it.unitPrice * it.quantity), 0);
+    const discountPercent = getSelectedDiscount();
+    const finalTotal = Math.max(0, subtotal - (subtotal * discountPercent) / 100);
+    document.getElementById('paidAmountInput').value = finalTotal.toFixed(2);
+    recalculateTotals();
+  });
+
+  // Customer Select Handler
+  document.getElementById('posCustomerSelect').addEventListener('change', function () {
+    const opt = this.options[this.selectedIndex];
+    const loyaltyBadge = document.getElementById('loyaltyBadge');
+    const dueAlert = document.getElementById('customerDueAlert');
+    const dueAmt = document.getElementById('customerDueAmt');
+
+    loyaltyBadge.textContent = opt.dataset.loyalty || 'Standard';
+    const due = parseFloat(opt.dataset.due) || 0;
+    if (due > 0) {
+      dueAlert.classList.remove('d-none');
+      dueAmt.textContent = formatMoney(due);
+    } else {
+      dueAlert.classList.add('d-none');
+    }
+
+    recalculateTotals();
+  });
+
+  // Payment Method Radios Handler
+  document.querySelectorAll('input[name="paymentMethodRadio"]').forEach(radio => {
+    radio.addEventListener('change', function () {
+      if (this.value === 'Credit') {
+        document.getElementById('paidAmountInput').value = '0.00';
+      } else if (cart.length > 0) {
+        const subtotal = cart.reduce((acc, it) => acc + (it.unitPrice * it.quantity), 0);
+        const discountPercent = getSelectedDiscount();
+        const finalTotal = Math.max(0, subtotal - (subtotal * discountPercent) / 100);
+        document.getElementById('paidAmountInput').value = finalTotal.toFixed(2);
+      }
+      recalculateTotals();
+    });
+  });
+
+  document.getElementById('paidAmountInput').addEventListener('input', recalculateTotals);
+
+  // Search & Filter Products
+  const searchInput = document.getElementById('posSearchInput');
+  searchInput.addEventListener('input', filterProducts);
+  document.getElementById('clearSearchBtn').addEventListener('click', () => {
+    searchInput.value = '';
+    filterProducts();
+  });
+
+  // Category Filtering
+  document.querySelectorAll('.category-pill').forEach(pill => {
+    pill.addEventListener('click', function () {
+      document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('btn-primary', 'active'));
+      document.querySelectorAll('.category-pill').forEach(p => p.classList.add('btn-outline-secondary'));
+      this.classList.remove('btn-outline-secondary');
+      this.classList.add('btn-primary', 'active');
+      filterProducts();
+    });
+  });
+
+  function filterProducts() {
+    const query = searchInput.value.toLowerCase().trim();
+    const activeCategory = document.querySelector('.category-pill.active')?.dataset.category || 'all';
+
+    document.querySelectorAll('.product-pos-card').forEach(card => {
+      const name = (card.dataset.name || '').toLowerCase();
+      const sku = (card.dataset.sku || '').toLowerCase();
+      const barcode = (card.dataset.barcode || '').toLowerCase();
+      const cat = card.dataset.category;
+
+      const matchesQuery = !query || name.includes(query) || sku.includes(query) || barcode.includes(query);
+      const matchesCat = activeCategory === 'all' || cat === activeCategory;
+
+      if (matchesQuery && matchesCat) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  // Clear Cart Button
+  document.getElementById('clearCartBtn').addEventListener('click', function () {
+    if (cart.length > 0 && confirm('Clear all items from the current cart?')) {
+      cart = [];
+      renderCart();
+    }
+  });
+
+  // Complete Sale & Checkout Submit
+  document.getElementById('completeSaleBtn').addEventListener('click', async function () {
+    if (cart.length === 0) return;
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing Sale...';
+
+    const custSelect = document.getElementById('posCustomerSelect');
+    const selectedOpt = custSelect.options[custSelect.selectedIndex];
+    const customerId = custSelect.value || null;
+    const customerName = selectedOpt.dataset.name || 'Walk-in Customer';
+    const customerPhone = selectedOpt.dataset.phone || '';
+    const discountPercentage = parseFloat(selectedOpt.dataset.discount) || 0;
+    const paymentMethod = document.querySelector('input[name="paymentMethodRadio"]:checked')?.value || 'Cash';
+    const paidAmount = parseFloat(document.getElementById('paidAmountInput').value) || 0;
+    const invoiceNumber = document.getElementById('currentInvoiceNumber').textContent;
+
+    const payload = {
+      invoiceNumber,
+      customerId,
+      customerName,
+      customerPhone,
+      items: cart.map(i => ({
+        product: i.product,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+      })),
+      discountPercentage,
+      paymentMethod,
+      paidAmount,
+      notes: `POS billing transaction`,
+    };
+
+    try {
+      const resp = await fetch('/sales', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await resp.json();
+      if (resp.ok && result.success) {
+        window.location.href = result.redirectUrl || `/sales/${result.saleId}`;
+      } else {
+        alert(result.message || 'Failed to complete transaction.');
+        document.getElementById('completeSaleBtn').disabled = false;
+        document.getElementById('completeSaleBtn').innerHTML = '<i class="bi bi-check2-circle me-1"></i> Complete Sale &amp; Print Bill';
+      }
+    } catch (err) {
+      alert('Network error while processing checkout: ' + err.message);
+      document.getElementById('completeSaleBtn').disabled = false;
+      document.getElementById('completeSaleBtn').innerHTML = '<i class="bi bi-check2-circle me-1"></i> Complete Sale &amp; Print Bill';
+    }
+  });
+</script>
+
+<%- include('../partials/footer') %>

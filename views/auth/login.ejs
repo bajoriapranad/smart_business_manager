@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Smart Business Manager</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Custom Business Theme CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-light">
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+        
+        <!-- Brand Header -->
+        <div class="text-center mb-4">
+          <div class="d-inline-flex align-items-center justify-content-center bg-white border p-2 rounded mb-2 shadow-sm">
+            <i class="bi bi-briefcase-fill text-primary fs-3"></i>
+          </div>
+          <h4 class="fw-bold text-dark mb-1">Smart Business Manager</h4>
+          <p class="text-muted small">Sign in to your business management console</p>
+        </div>
+
+        <!-- Alerts -->
+        <% if (typeof error_msg !== 'undefined' && error_msg && error_msg.length > 0) { %>
+          <div class="alert alert-danger alert-dismissible fade show flash-alert py-2 px-3 small" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> <%= error_msg %>
+            <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        <% } %>
+
+        <% if (typeof success_msg !== 'undefined' && success_msg && success_msg.length > 0) { %>
+          <div class="alert alert-success alert-dismissible fade show flash-alert py-2 px-3 small" role="alert">
+            <i class="bi bi-check-circle-fill me-1"></i> <%= success_msg %>
+            <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        <% } %>
+
+        <!-- Login Card -->
+        <div class="card-business shadow-sm p-4">
+          <form action="/auth/login" method="POST" autocomplete="on">
+            
+            <div class="mb-3">
+              <label for="email" class="form-label fw-semibold small text-secondary">Email Address <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                <input 
+                  type="email" 
+                  class="form-control border-start-0 ps-0" 
+                  id="email" 
+                  name="email" 
+                  placeholder="name@business.com" 
+                  value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>" 
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label fw-semibold small text-secondary">Password <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                <input 
+                  type="password" 
+                  class="form-control border-start-0 ps-0" 
+                  id="password" 
+                  name="password" 
+                  placeholder="Enter your password" 
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-primary py-2 fw-medium">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Footer Links -->
+        <div class="text-center mt-3 small text-muted">
+          Don't have an account? <a href="/auth/register" class="text-primary text-decoration-none fw-semibold">Create Business Account</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

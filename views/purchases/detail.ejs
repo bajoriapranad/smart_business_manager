@@ -1,0 +1,317 @@
+<%- include('../partials/header') %>
+
+<div class="page-header d-print-none">
+  <div>
+    <h1 class="page-title">
+      Invoice <%= purchase.invoiceNumber %>
+      <% if (purchase.paymentStatus === 'Paid') { %>
+        <span class="badge-status status-paid fs-6 ms-2">Paid</span>
+      <% } else if (purchase.paymentStatus === 'Partially Paid') { %>
+        <span class="badge-status status-warning fs-6 ms-2">Partially Paid</span>
+      <% } else { %>
+        <span class="badge-status status-pending fs-6 ms-2">Pending Due</span>
+      <% } %>
+    </h1>
+    <p class="page-subtitle">Purchased on <%= new Date(purchase.purchaseDate).toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }) %></p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/purchases" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Invoices
+    </a>
+    <button type="button" class="btn btn-sm btn-outline-dark" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i> Print Invoice
+    </button>
+    <% if (purchase.remainingAmount > 0) { %>
+      <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+        <i class="bi bi-cash-coin me-1"></i> Record Payment
+      </button>
+    <% } %>
+    <button 
+      type="button" 
+      class="btn btn-sm btn-outline-danger" 
+      onclick="confirmDeletePurchase('<%= purchase._id %>', '<%= purchase.invoiceNumber %>')"
+    >
+      <i class="bi bi-trash me-1"></i> Void
+    </button>
+  </div>
+</div>
+
+<!-- Invoice Card Container -->
+<div class="card-business mb-4 p-4 invoice-print-container">
+  <!-- Invoice Header -->
+  <div class="row pb-4 mb-4 border-bottom">
+    <div class="col-6">
+      <h3 class="fw-bold text-primary mb-1">
+        <i class="bi bi-briefcase-fill me-1"></i> <%= (settings && settings.businessName) || currentBusinessName %>
+      </h3>
+      <div class="text-muted small">
+        <%= (settings && settings.address) || 'Store & Inventory Management' %><br>
+        Phone: <%= (settings && settings.businessPhone) || '—' %>
+      </div>
+    </div>
+    <div class="col-6 text-end">
+      <span class="badge bg-light text-dark border px-3 py-2 text-uppercase letter-spacing-1 fw-bold mb-2">
+        Goods Receipt / Purchase Bill
+      </span>
+      <h4 class="fw-bold text-dark mb-1">#<%= purchase.invoiceNumber %></h4>
+      <div class="text-muted small">
+        <strong>Date:</strong> <%= new Date(purchase.purchaseDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) %><br>
+        <% if (purchase.dueDate) { %>
+          <strong>Due Date:</strong> <%= new Date(purchase.dueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) %><br>
+        <% } %>
+        <strong>Status:</strong> 
+        <span class="<%= purchase.remainingAmount > 0 ? 'text-danger fw-bold' : 'text-success fw-bold' %>">
+          <%= purchase.paymentStatus %>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor / Supplier Information -->
+  <div class="row mb-4">
+    <div class="col-12 col-md-6">
+      <div class="p-3 bg-light rounded-2 border">
+        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 11px;">Supplier / Vendor Details</span>
+        <% if (purchase.supplier) { %>
+          <h5 class="fw-bold text-dark mb-1">
+            <a href="/suppliers/<%= purchase.supplier._id %>" class="text-dark text-decoration-none hover-primary">
+              <%= purchase.supplier.name %>
+            </a>
+          </h5>
+          <% if (purchase.supplier.company) { %>
+            <div class="text-muted fw-medium small mb-1"><%= purchase.supplier.company %></div>
+          <% } %>
+          <div class="text-muted small">
+            <% if (purchase.supplier.phone) { %><div><i class="bi bi-telephone me-1"></i> <%= purchase.supplier.phone %></div><% } %>
+            <% if (purchase.supplier.email) { %><div><i class="bi bi-envelope me-1"></i> <%= purchase.supplier.email %></div><% } %>
+            <% if (purchase.supplier.gstNumber) { %><div><strong>GSTIN:</strong> <%= purchase.supplier.gstNumber %></div><% } %>
+            <% if (purchase.supplier.address) { %><div><strong>Depot:</strong> <%= purchase.supplier.address %></div><% } %>
+          </div>
+        <% } else { %>
+          <span class="text-muted">Supplier details unavailable</span>
+        <% } %>
+      </div>
+    </div>
+    <div class="col-12 col-md-6 mt-3 mt-md-0">
+      <div class="p-3 bg-light rounded-2 border h-100">
+        <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 11px;">Account &amp; Payment Terms</span>
+        <div class="mb-2">
+          <span class="text-muted small">Payment Terms:</span> 
+          <span class="badge bg-white text-dark border ms-1"><%= purchase.supplier?.paymentTerms || 'Net 30' %></span>
+        </div>
+        <div class="mb-2">
+          <span class="text-muted small">Vendor Lifetime Sourced:</span> 
+          <span class="fw-semibold text-dark ms-1"><%= currency %><%= (purchase.supplier?.totalPurchases || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+        </div>
+        <div>
+          <span class="text-muted small">Vendor Balance Due:</span> 
+          <span class="fw-bold <%= (purchase.supplier?.amountDue || 0) > 0 ? 'text-danger' : 'text-success' %> ms-1">
+            <%= currency %><%= (purchase.supplier?.amountDue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Line Items Table -->
+  <div class="table-responsive mb-4">
+    <table class="table table-business table-bordered mb-0">
+      <thead class="bg-light">
+        <tr>
+          <th style="width: 50px;" class="text-center">#</th>
+          <th>Product Description</th>
+          <th>SKU / Code</th>
+          <th class="text-center" style="width: 100px;">Quantity</th>
+          <th class="text-end" style="width: 140px;">Unit Cost</th>
+          <th class="text-end" style="width: 150px;">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% purchase.items.forEach((it, idx) => { %>
+          <tr>
+            <td class="text-center text-muted"><%= idx + 1 %></td>
+            <td>
+              <% if (it.product) { %>
+                <a href="/inventory/<%= it.product._id %>" class="fw-semibold text-dark text-decoration-none hover-primary">
+                  <%= it.product.name %>
+                </a>
+              <% } else { %>
+                <span class="text-dark fw-medium">Product Item</span>
+              <% } %>
+            </td>
+            <td class="text-muted small"><%= it.product?.sku || '—' %></td>
+            <td class="text-center fw-bold">
+              <%= it.quantity %> <small class="text-muted fw-normal"><%= it.product?.unit || 'units' %></small>
+            </td>
+            <td class="text-end text-muted">
+              <%= currency %><%= it.purchasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+            </td>
+            <td class="text-end fw-bold text-dark">
+              <%= currency %><%= it.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr class="bg-light">
+          <td colspan="4" class="border-0"></td>
+          <td class="text-end fw-bold text-muted border-0">Total Invoice Amount:</td>
+          <td class="text-end fw-bold text-dark fs-5">
+            <%= currency %><%= purchase.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="4" class="border-0"></td>
+          <td class="text-end fw-bold text-success border-0">Amount Paid:</td>
+          <td class="text-end fw-bold text-success">
+            <%= currency %><%= purchase.paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="4" class="border-0"></td>
+          <td class="text-end fw-bold <%= purchase.remainingAmount > 0 ? 'text-danger' : 'text-muted' %> border-0">
+            Remaining Outstanding Due:
+          </td>
+          <td class="text-end fw-bold <%= purchase.remainingAmount > 0 ? 'text-danger fs-5' : 'text-muted' %>">
+            <%= currency %><%= purchase.remainingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Notes & Footer -->
+  <% if (purchase.notes) { %>
+    <div class="p-3 bg-light rounded-2 mb-3 border">
+      <span class="fw-bold small text-muted d-block">Invoice Notes &amp; Dispatch Remarks:</span>
+      <p class="mb-0 small text-dark"><%= purchase.notes %></p>
+    </div>
+  <% } %>
+
+  <div class="row pt-4 text-muted small border-top">
+    <div class="col-8">
+      <div>Inventory automatically updated and synchronized with stock movements.</div>
+      <div>System generated invoice voucher &bull; Smart Business Manager</div>
+    </div>
+    <div class="col-4 text-end">
+      <div class="border-top pt-2 mt-4 text-center d-inline-block" style="min-width: 150px;">
+        Authorized Receiver Signature
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Record Payment -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/purchases/<%= purchase._id %>/payments" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-dark">
+            <i class="bi bi-cash-stack me-2 text-success"></i> Record Payment to Supplier
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 bg-light rounded-2 border mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Invoice #:</span>
+              <span class="fw-bold text-dark"><%= purchase.invoiceNumber %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Supplier:</span>
+              <span class="fw-semibold text-dark"><%= purchase.supplier?.name %></span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Current Remaining Due:</span>
+              <span class="fw-bold text-danger"><%= currency %><%= purchase.remainingAmount.toFixed(2) %></span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="paymentAmount" class="form-label fw-semibold text-dark required-field">Payment Amount</label>
+            <div class="input-group">
+              <span class="input-group-text"><%= currency %></span>
+              <input 
+                type="number" 
+                class="form-control form-control-lg text-end fw-bold text-success" 
+                id="paymentAmount" 
+                name="paymentAmount" 
+                min="0.01" 
+                max="<%= purchase.remainingAmount %>" 
+                step="0.01" 
+                value="<%= purchase.remainingAmount.toFixed(2) %>" 
+                required
+              >
+            </div>
+            <div class="form-text text-muted">Amount cannot exceed current outstanding balance.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-success">
+            <i class="bi bi-check-circle me-1"></i> Settle Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Void Confirmation -->
+<div class="modal fade" id="deletePurchaseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i> Void Purchase Invoice
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-2">Are you sure you want to void invoice <strong id="deleteInvoiceName" class="text-dark"></strong>?</p>
+        <div class="alert alert-warning py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i> Voiding will roll back product quantities in inventory and reverse this purchase from the supplier's balance ledger.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deletePurchaseForm" method="POST" action="">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="btn btn-sm btn-danger">Void &amp; Rollback Stock</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media print {
+    body {
+      background: white !important;
+    }
+    .app-sidebar, .app-main > nav, .page-header, .btn, .sidebar-backdrop {
+      display: none !important;
+    }
+    .app-main, .app-content {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .invoice-print-container {
+      box-shadow: none !important;
+      border: none !important;
+      padding: 0 !important;
+    }
+  }
+</style>
+
+<script>
+  function confirmDeletePurchase(id, invoiceNumber) {
+    const modal = new bootstrap.Modal(document.getElementById('deletePurchaseModal'));
+    document.getElementById('deleteInvoiceName').textContent = '#' + invoiceNumber;
+    document.getElementById('deletePurchaseForm').action = '/purchases/' + id + '?_method=DELETE';
+    modal.show();
+  }
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,440 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Record Inward Purchase</h1>
+    <p class="page-subtitle">Receive stock from suppliers, update purchase costs, and log accounts payable</p>
+  </div>
+  <div>
+    <a href="/purchases" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to Invoices
+    </a>
+  </div>
+</div>
+
+<form action="/purchases" method="POST" id="purchaseForm" class="needs-validation" novalidate>
+  <div class="row g-4">
+    <!-- Left Column: Details & Line Items -->
+    <div class="col-12 col-lg-8">
+      <!-- Invoice & Vendor Header -->
+      <div class="card-business mb-4">
+        <div class="card-header">
+          <span class="fw-semibold text-dark">
+            <i class="bi bi-file-earmark-ruled me-1 text-primary"></i> Invoice &amp; Vendor Information
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label for="supplierId" class="form-label required-field">Select Supplier / Vendor</label>
+              <select name="supplierId" id="supplierId" class="form-select form-select-sm" required>
+                <option value="" disabled <%= !preselectedSupplier ? 'selected' : '' %>>-- Choose Supplier --</option>
+                <% suppliers.forEach(s => { %>
+                  <option 
+                    value="<%= s._id %>" 
+                    <%= preselectedSupplier === s._id.toString() ? 'selected' : '' %>
+                    data-terms="<%= s.paymentTerms %>"
+                    data-phone="<%= s.phone %>"
+                  >
+                    <%= s.name %> <%= s.company ? `(${s.company})` : '' %> &bull; <%= s.paymentTerms %>
+                  </option>
+                <% }); %>
+              </select>
+              <div class="invalid-feedback">Please select a supplier.</div>
+              <% if (suppliers.length === 0) { %>
+                <small class="text-danger mt-1 d-block">
+                  No suppliers found. <a href="/suppliers/new" target="_blank">Add a supplier first</a>.
+                </small>
+              <% } %>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label for="invoiceNumber" class="form-label required-field">Supplier Invoice / Bill #</label>
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="invoiceNumber" 
+                name="invoiceNumber" 
+                value="<%= suggestedInvoiceNumber %>" 
+                required 
+                placeholder="e.g. INV-PUR-2026-001"
+              >
+              <div class="invalid-feedback">Invoice number is required.</div>
+            </div>
+
+            <div class="col-6 col-md-6">
+              <label for="purchaseDate" class="form-label">Purchase Date</label>
+              <input 
+                type="date" 
+                class="form-control form-control-sm" 
+                id="purchaseDate" 
+                name="purchaseDate" 
+                value="<%= today %>"
+              >
+            </div>
+
+            <div class="col-6 col-md-6">
+              <label for="dueDate" class="form-label">Payment Due Date</label>
+              <input 
+                type="date" 
+                class="form-control form-control-sm" 
+                id="dueDate" 
+                name="dueDate"
+              >
+              <div class="form-text text-muted" style="font-size: 11px;">Optional expected settlement date</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Line Items Section -->
+      <div class="card-business mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-semibold text-dark">
+            <i class="bi bi-box-seam me-1 text-primary"></i> Inward Product Items &amp; Quantities
+          </span>
+          <button type="button" class="btn btn-xs btn-outline-primary" id="addRowBtn">
+            <i class="bi bi-plus-lg me-1"></i> Add Another Item
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-business align-middle mb-0" id="itemsTable">
+              <thead class="bg-light">
+                <tr>
+                  <th style="min-width: 250px;">Product / Item</th>
+                  <th style="width: 130px;">Quantity</th>
+                  <th style="width: 150px;">Cost Price (<%= currency %>)</th>
+                  <th style="width: 140px;" class="text-end">Line Total</th>
+                  <th style="width: 50px;"></th>
+                </tr>
+              </thead>
+              <tbody id="itemsTbody">
+                <!-- Initial Row -->
+                <tr class="item-row">
+                  <td>
+                    <select name="productId" class="form-select form-select-sm product-select" required>
+                      <option value="" disabled selected>-- Select Product --</option>
+                      <% products.forEach(p => { %>
+                        <option 
+                          value="<%= p._id %>" 
+                          data-cost="<%= p.purchasePrice %>" 
+                          data-stock="<%= p.currentStock %>" 
+                          data-unit="<%= p.unit %>"
+                          data-supplier="<%= p.supplier || '' %>"
+                        >
+                          <%= p.name %> [Stock: <%= p.currentStock %> <%= p.unit %>]
+                        </option>
+                      <% }); %>
+                    </select>
+                    <div class="invalid-feedback">Choose an item.</div>
+                  </td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <input 
+                        type="number" 
+                        name="quantity" 
+                        class="form-control form-control-sm qty-input text-center" 
+                        min="1" 
+                        step="1" 
+                        value="1" 
+                        required
+                      >
+                      <span class="input-group-text unit-label text-muted" style="font-size: 11px;">units</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><%= currency %></span>
+                      <input 
+                        type="number" 
+                        name="purchasePrice" 
+                        class="form-control form-control-sm cost-input text-end" 
+                        min="0" 
+                        step="0.01" 
+                        value="0.00" 
+                        required
+                      >
+                    </div>
+                  </td>
+                  <td class="text-end">
+                    <span class="fw-bold text-dark row-subtotal"><%= currency %>0.00</span>
+                  </td>
+                  <td class="text-center">
+                    <button type="button" class="btn btn-sm text-danger p-0 delete-row-btn" title="Remove Item">
+                      <i class="bi bi-trash fs-6"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <% if (products.length === 0) { %>
+            <div class="p-3 text-center text-muted small">
+              No products found in inventory. <a href="/inventory/new" target="_blank">Add a product first</a>.
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Notes / Memo -->
+      <div class="card-business">
+        <div class="card-body">
+          <label for="notes" class="form-label">Purchase Notes / Delivery Remarks</label>
+          <textarea 
+            name="notes" 
+            id="notes" 
+            rows="2" 
+            class="form-control form-control-sm" 
+            placeholder="e.g. Batch #B402, transport dispatch via VRL Logistics..."
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Financials & Submit -->
+    <div class="col-12 col-lg-4">
+      <div class="card-business sticky-top" style="top: 80px;">
+        <div class="card-header bg-light">
+          <span class="fw-semibold text-dark">
+            <i class="bi bi-cash-stack me-1 text-success"></i> Payment &amp; Settlement
+          </span>
+        </div>
+        <div class="card-body">
+          <!-- Total Amount Breakdown -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted">Gross Total Amount:</span>
+            <span class="fs-4 fw-bold text-dark" id="displayGrossTotal"><%= currency %>0.00</span>
+          </div>
+
+          <hr class="my-3 text-muted opacity-25">
+
+          <!-- Paid Amount Input -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label for="paidAmount" class="form-label mb-0 fw-medium text-dark">Amount Paid Now</label>
+              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="fullPayBtn">
+                <i class="bi bi-check2-all me-1"></i> Pay Full
+              </button>
+            </div>
+            <div class="input-group">
+              <span class="input-group-text"><%= currency %></span>
+              <input 
+                type="number" 
+                name="paidAmount" 
+                id="paidAmount" 
+                class="form-control text-end fw-bold text-success" 
+                min="0" 
+                step="0.01" 
+                value="0.00"
+              >
+            </div>
+            <small class="text-muted" style="font-size: 11px;">Enter 0 if on full trade credit</small>
+          </div>
+
+          <!-- Remaining Due Balance -->
+          <div class="p-3 rounded-2 bg-light mb-3 border">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="small text-muted">Remaining Due:</span>
+              <span class="fw-bold fs-5 text-danger" id="displayRemainingDue"><%= currency %>0.00</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="small text-muted">Invoice Status:</span>
+              <span class="badge-status status-pending" id="displayPaymentStatus">Pending</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary" id="saveInvoiceBtn">
+              <i class="bi bi-check-circle me-1"></i> Confirm &amp; Receive Stock
+            </button>
+            <a href="/purchases" class="btn btn-sm btn-outline-secondary">
+              Cancel
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<!-- Template for Dynamic Rows -->
+<template id="itemRowTemplate">
+  <tr class="item-row">
+    <td>
+      <select name="productId" class="form-select form-select-sm product-select" required>
+        <option value="" disabled selected>-- Select Product --</option>
+        <% products.forEach(p => { %>
+          <option 
+            value="<%= p._id %>" 
+            data-cost="<%= p.purchasePrice %>" 
+            data-stock="<%= p.currentStock %>" 
+            data-unit="<%= p.unit %>"
+            data-supplier="<%= p.supplier || '' %>"
+          >
+            <%= p.name %> [Stock: <%= p.currentStock %> <%= p.unit %>]
+          </option>
+        <% }); %>
+      </select>
+      <div class="invalid-feedback">Choose an item.</div>
+    </td>
+    <td>
+      <div class="input-group input-group-sm">
+        <input 
+          type="number" 
+          name="quantity" 
+          class="form-control form-control-sm qty-input text-center" 
+          min="1" 
+          step="1" 
+          value="1" 
+          required
+        >
+        <span class="input-group-text unit-label text-muted" style="font-size: 11px;">units</span>
+      </div>
+    </td>
+    <td>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text"><%= currency %></span>
+        <input 
+          type="number" 
+          name="purchasePrice" 
+          class="form-control form-control-sm cost-input text-end" 
+          min="0" 
+          step="0.01" 
+          value="0.00" 
+          required
+        >
+      </div>
+    </td>
+    <td class="text-end">
+      <span class="fw-bold text-dark row-subtotal"><%= currency %>0.00</span>
+    </td>
+    <td class="text-center">
+      <button type="button" class="btn btn-sm text-danger p-0 delete-row-btn" title="Remove Item">
+        <i class="bi bi-trash fs-6"></i>
+      </button>
+    </td>
+  </tr>
+</template>
+
+<script>
+  const CURRENCY = '<%= currency %>';
+
+  function formatMoney(amount) {
+    return CURRENCY + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function recalculateTotals() {
+    let grossTotal = 0;
+    const rows = document.querySelectorAll('#itemsTbody .item-row');
+
+    rows.forEach(row => {
+      const qtyInput = row.querySelector('.qty-input');
+      const costInput = row.querySelector('.cost-input');
+      const subtotalEl = row.querySelector('.row-subtotal');
+
+      const qty = parseFloat(qtyInput.value) || 0;
+      const cost = parseFloat(costInput.value) || 0;
+      const subtotal = qty * cost;
+
+      subtotalEl.textContent = formatMoney(subtotal);
+      grossTotal += subtotal;
+    });
+
+    document.getElementById('displayGrossTotal').textContent = formatMoney(grossTotal);
+
+    const paidInput = document.getElementById('paidAmount');
+    let paidVal = parseFloat(paidInput.value);
+    if (isNaN(paidVal) || paidVal < 0) paidVal = 0;
+
+    const remaining = Math.max(0, grossTotal - paidVal);
+    document.getElementById('displayRemainingDue').textContent = formatMoney(remaining);
+
+    const statusBadge = document.getElementById('displayPaymentStatus');
+    if (grossTotal > 0 && paidVal >= grossTotal) {
+      statusBadge.className = 'badge-status status-paid';
+      statusBadge.textContent = 'Paid';
+    } else if (paidVal > 0) {
+      statusBadge.className = 'badge-status status-warning';
+      statusBadge.textContent = 'Partially Paid';
+    } else {
+      statusBadge.className = 'badge-status status-pending';
+      statusBadge.textContent = 'Pending';
+    }
+  }
+
+  function bindRowEvents(row) {
+    const productSelect = row.querySelector('.product-select');
+    const qtyInput = row.querySelector('.qty-input');
+    const costInput = row.querySelector('.cost-input');
+    const unitLabel = row.querySelector('.unit-label');
+    const deleteBtn = row.querySelector('.delete-row-btn');
+
+    productSelect.addEventListener('change', function () {
+      const selectedOpt = this.options[this.selectedIndex];
+      if (selectedOpt && selectedOpt.dataset.cost) {
+        costInput.value = parseFloat(selectedOpt.dataset.cost).toFixed(2);
+        if (selectedOpt.dataset.unit) {
+          unitLabel.textContent = selectedOpt.dataset.unit;
+        }
+      }
+      recalculateTotals();
+    });
+
+    qtyInput.addEventListener('input', recalculateTotals);
+    costInput.addEventListener('input', recalculateTotals);
+
+    deleteBtn.addEventListener('click', function () {
+      const totalRows = document.querySelectorAll('#itemsTbody .item-row').length;
+      if (totalRows > 1) {
+        row.remove();
+        recalculateTotals();
+      } else {
+        alert('Purchase order must contain at least one item.');
+      }
+    });
+  }
+
+  // Add initial row events
+  document.querySelectorAll('#itemsTbody .item-row').forEach(bindRowEvents);
+
+  // Add new row button
+  document.getElementById('addRowBtn').addEventListener('click', function () {
+    const template = document.getElementById('itemRowTemplate');
+    const clone = template.content.cloneNode(true);
+    const newRow = clone.querySelector('.item-row');
+    document.getElementById('itemsTbody').appendChild(newRow);
+    bindRowEvents(newRow);
+    recalculateTotals();
+  });
+
+  // Paid amount input
+  document.getElementById('paidAmount').addEventListener('input', recalculateTotals);
+
+  // Pay full quick toggle
+  document.getElementById('fullPayBtn').addEventListener('click', function () {
+    let grossTotal = 0;
+    document.querySelectorAll('#itemsTbody .item-row').forEach(row => {
+      const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+      const cost = parseFloat(row.querySelector('.cost-input').value) || 0;
+      grossTotal += qty * cost;
+    });
+    document.getElementById('paidAmount').value = grossTotal.toFixed(2);
+    recalculateTotals();
+  });
+
+  // Form validation on submit
+  document.getElementById('purchaseForm').addEventListener('submit', function (e) {
+    if (!this.checkValidity()) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    this.classList.add('was-validated');
+  });
+
+  // Calculate on load
+  recalculateTotals();
+</script>
+
+<%- include('../partials/footer') %>

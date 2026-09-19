@@ -1,0 +1,520 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Payments &amp; Due Reminders Hub</h1>
+    <p class="page-subtitle">Centralized liquidity command center: monitor customer credit receivables, track vendor payables, and send payment reminders</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/sales/pos" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-cart-plus me-1"></i> New Sale
+    </a>
+    <a href="/purchases/new" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-truck me-1"></i> New Purchase
+    </a>
+  </div>
+</div>
+
+<!-- Working Capital & Liquidity Overview Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Expected Inflow (Receivables)</span>
+      <div class="stat-value text-success">
+        <%= currency %><%= kpis.totalReceivables.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted"><%= kpis.customerCount %> customer<%= kpis.customerCount === 1 ? '' : 's' %> with credit due</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Committed Outflows (Payables)</span>
+      <div class="stat-value text-danger">
+        <%= currency %><%= kpis.totalPayables.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">Suppliers, payroll, and utilities</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Net Working Capital Cushion</span>
+      <div class="stat-value <%= kpis.netWorkingCapital >= 0 ? 'text-primary' : 'text-danger' %>">
+        <%= kpis.netWorkingCapital < 0 ? '-' : '+' %><%= currency %><%= Math.abs(kpis.netWorkingCapital).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext <%= kpis.netWorkingCapital >= 0 ? 'text-success fw-medium' : 'text-danger fw-semibold' %>">
+        <%= kpis.netWorkingCapital >= 0 ? 'Surplus (Receivables > Payables)' : 'Deficit (Liabilities exceed dues)' %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Urgent Attention Required</span>
+      <div class="stat-value <%= kpis.totalOverdueCount > 0 ? 'text-danger' : 'text-muted' %>">
+        <%= kpis.totalOverdueCount %>
+      </div>
+      <div class="stat-subtext <%= kpis.totalOverdueCount > 0 ? 'text-danger fw-semibold' : 'text-muted' %>">
+        <% if (kpis.totalOverdueCount > 0) { %>
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue bills pending settlement
+        <% } else { %>
+          No overdue obligations
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payables Distribution Pill Bar -->
+<div class="card-business mb-4 p-3 bg-light border">
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <span class="text-xs text-uppercase fw-semibold text-muted tracking-wide">Outflow Commitments Breakdown</span>
+    <span class="text-xs fw-semibold text-danger">Total: <%= currency %><%= kpis.totalPayables.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></span>
+  </div>
+  <div class="row g-2 text-center text-xs">
+    <div class="col-6 col-md-3">
+      <div class="p-2 bg-white rounded border">
+        <span class="text-muted d-block">Supplier Payables</span>
+        <span class="fw-bold text-dark"><%= currency %><%= kpis.supplierDues.toLocaleString('en-IN') %></span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="p-2 bg-white rounded border">
+        <span class="text-muted d-block">Unpaid Staff Payroll</span>
+        <span class="fw-bold text-dark"><%= currency %><%= kpis.payrollDues.toLocaleString('en-IN') %></span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="p-2 bg-white rounded border">
+        <span class="text-muted d-block">Operating Expenses</span>
+        <span class="fw-bold text-dark"><%= currency %><%= kpis.expenseDues.toLocaleString('en-IN') %></span>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="p-2 bg-white rounded border">
+        <span class="text-muted d-block">Electricity Bills</span>
+        <span class="fw-bold text-dark"><%= currency %><%= kpis.electricityDues.toLocaleString('en-IN') %></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-3 border-bottom" id="paymentTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button 
+      class="nav-link <%= activeTab === 'overview' || activeTab === 'receivables' ? 'active' : '' %>" 
+      id="receivables-tab" 
+      data-bs-toggle="tab" 
+      data-bs-target="#receivables" 
+      type="button" 
+      role="tab"
+    >
+      <i class="bi bi-person-check me-1 text-success"></i> Customer Receivables &amp; Reminders
+      <span class="badge bg-success-subtle text-success ms-1"><%= customers.length %></span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button 
+      class="nav-link <%= activeTab === 'suppliers' ? 'active' : '' %>" 
+      id="suppliers-tab" 
+      data-bs-toggle="tab" 
+      data-bs-target="#suppliers" 
+      type="button" 
+      role="tab"
+    >
+      <i class="bi bi-truck me-1 text-primary"></i> Supplier Payables
+      <span class="badge bg-primary-subtle text-primary ms-1"><%= suppliers.length %></span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button 
+      class="nav-link <%= activeTab === 'payroll' ? 'active' : '' %>" 
+      id="payroll-tab" 
+      data-bs-toggle="tab" 
+      data-bs-target="#payroll" 
+      type="button" 
+      role="tab"
+    >
+      <i class="bi bi-person-badge me-1 text-info"></i> Unpaid Staff Payroll
+      <span class="badge bg-info-subtle text-info ms-1"><%= unpaidStaff.length %></span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button 
+      class="nav-link <%= activeTab === 'expenses' ? 'active' : '' %>" 
+      id="expenses-tab" 
+      data-bs-toggle="tab" 
+      data-bs-target="#expenses" 
+      type="button" 
+      role="tab"
+    >
+      <i class="bi bi-wallet2 me-1 text-warning"></i> Expenses &amp; Utility Dues
+      <span class="badge bg-warning-subtle text-warning-emphasis ms-1"><%= expenses.length + electricity.length %></span>
+    </button>
+  </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="paymentTabsContent">
+  <!-- 1. Customer Receivables & Reminders -->
+  <div 
+    class="tab-pane fade <%= activeTab === 'overview' || activeTab === 'receivables' ? 'show active' : '' %>" 
+    id="receivables" 
+    role="tabpanel"
+  >
+    <div class="card-business p-0 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Customer</th>
+              <th>Phone Number</th>
+              <th>Loyalty Tier</th>
+              <th class="text-end">Credit Balance Due</th>
+              <th class="text-center">Send Reminder</th>
+              <th class="text-end pe-3">Settlement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (customers && customers.length > 0) { %>
+              <% customers.forEach(cust => { %>
+                <tr>
+                  <td class="ps-3">
+                    <a href="/customers/<%= cust._id %>" class="fw-bold text-dark text-decoration-none">
+                      <%= cust.name %>
+                    </a>
+                  </td>
+                  <td>
+                    <span class="text-muted"><%= cust.phone || 'N/A' %></span>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-secondary border">
+                      <%= cust.loyaltyTier || 'Standard' %>
+                    </span>
+                  </td>
+                  <td class="text-end fw-bold text-danger">
+                    <%= currency %><%= cust.outstandingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                  </td>
+                  <td class="text-center">
+                    <div class="d-inline-flex gap-1">
+                      <% if (cust.phone) { %>
+                        <a 
+                          href="<%= cust.whatsappUrl %>" 
+                          target="_blank" 
+                          class="btn btn-xs btn-success d-inline-flex align-items-center gap-1"
+                          title="Open WhatsApp with pre-drafted reminder"
+                        >
+                          <i class="bi bi-whatsapp"></i> WhatsApp
+                        </a>
+                      <% } %>
+                      <button 
+                        type="button" 
+                        class="btn btn-xs btn-outline-secondary"
+                        onclick="navigator.clipboard.writeText('<%= cust.reminderText.replace(/'/g, "\\'") %>'); alert('Reminder text copied to clipboard!');"
+                        title="Copy SMS text to clipboard"
+                      >
+                        <i class="bi bi-clipboard"></i> Copy SMS
+                      </button>
+                    </div>
+                  </td>
+                  <td class="text-end pe-3">
+                    <button 
+                      type="button" 
+                      class="btn btn-xs btn-primary" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#settleCustModal<%= cust._id %>"
+                    >
+                      <i class="bi bi-cash-coin me-1"></i> Settle
+                    </button>
+
+                    <!-- Settle Customer Dues Modal -->
+                    <div class="modal fade" id="settleCustModal<%= cust._id %>" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content">
+                          <form action="/payments/customer/<%= cust._id %>/pay" method="POST">
+                            <div class="modal-header py-2">
+                              <h6 class="modal-title"><i class="bi bi-cash-coin text-success me-1"></i>Settle Customer Dues</h6>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                              <p class="mb-2 text-xs">Customer: <strong><%= cust.name %></strong></p>
+                              <div class="p-2 bg-light rounded text-xs mb-3">
+                                Outstanding Balance: <strong class="text-danger"><%= currency %><%= cust.outstandingBalance.toFixed(2) %></strong>
+                              </div>
+                              <label class="form-label text-xs fw-semibold">Amount Received (<%= currency %>)</label>
+                              <input 
+                                type="number" 
+                                step="0.01" 
+                                min="0.01" 
+                                max="<%= cust.outstandingBalance %>" 
+                                name="amount" 
+                                class="form-control form-control-sm" 
+                                value="<%= cust.outstandingBalance %>" 
+                                required
+                              >
+                            </div>
+                            <div class="modal-footer py-1">
+                              <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-sm btn-success">Record Payment</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                  <i class="bi bi-check-circle-fill text-success fs-2 d-block mb-1"></i>
+                  <span class="fw-semibold">All customer accounts are clear!</span>
+                  <p class="text-xs mb-0">No outstanding customer credit dues found.</p>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Supplier Payables -->
+  <div class="tab-pane fade <%= activeTab === 'suppliers' ? 'show active' : '' %>" id="suppliers" role="tabpanel">
+    <div class="card-business p-0 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Supplier Name</th>
+              <th>Contact Phone</th>
+              <th>Payment Terms</th>
+              <th class="text-end">Total Purchases</th>
+              <th class="text-end">Amount Due</th>
+              <th class="text-end pe-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (suppliers && suppliers.length > 0) { %>
+              <% suppliers.forEach(supp => { %>
+                <tr>
+                  <td class="ps-3">
+                    <a href="/suppliers/<%= supp._id %>" class="fw-bold text-dark text-decoration-none">
+                      <%= supp.name %>
+                    </a>
+                  </td>
+                  <td><%= supp.phone || 'N/A' %></td>
+                  <td><span class="badge bg-light text-dark border"><%= supp.paymentTerms || 'Net 30' %></span></td>
+                  <td class="text-end"><%= currency %><%= supp.totalPurchases.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                  <td class="text-end fw-bold text-danger"><%= currency %><%= supp.amountDue.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                  <td class="text-end pe-3">
+                    <button 
+                      type="button" 
+                      class="btn btn-xs btn-outline-primary" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#settleSuppModal<%= supp._id %>"
+                    >
+                      <i class="bi bi-cash me-1"></i> Pay Supplier
+                    </button>
+
+                    <!-- Settle Supplier Modal -->
+                    <div class="modal fade" id="settleSuppModal<%= supp._id %>" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content">
+                          <form action="/payments/supplier/<%= supp._id %>/pay" method="POST">
+                            <div class="modal-header py-2">
+                              <h6 class="modal-title"><i class="bi bi-truck text-primary me-1"></i>Pay Supplier</h6>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                              <p class="mb-2 text-xs">Supplier: <strong><%= supp.name %></strong></p>
+                              <div class="p-2 bg-light rounded text-xs mb-3">
+                                Outstanding Payable: <strong class="text-danger"><%= currency %><%= supp.amountDue.toFixed(2) %></strong>
+                              </div>
+                              <label class="form-label text-xs fw-semibold">Payment Amount (<%= currency %>)</label>
+                              <input 
+                                type="number" 
+                                step="0.01" 
+                                min="0.01" 
+                                max="<%= supp.amountDue %>" 
+                                name="amount" 
+                                class="form-control form-control-sm" 
+                                value="<%= supp.amountDue %>" 
+                                required
+                              >
+                            </div>
+                            <div class="modal-footer py-1">
+                              <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-sm btn-primary">Confirm Payment</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                  <i class="bi bi-check-circle-fill text-success fs-2 d-block mb-1"></i>
+                  <span class="fw-semibold">All supplier bills are paid!</span>
+                  <p class="text-xs mb-0">No outstanding payables to wholesale suppliers.</p>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Staff Payroll Dues -->
+  <div class="tab-pane fade <%= activeTab === 'payroll' ? 'show active' : '' %>" id="payroll" role="tabpanel">
+    <div class="card-business p-0 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Employee Name</th>
+              <th>Position / Role</th>
+              <th>Salary Frequency</th>
+              <th>Scheduled Payout Day</th>
+              <th class="text-end">Committed Salary (<%= currentMonth %>)</th>
+              <th class="text-end pe-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (unpaidStaff && unpaidStaff.length > 0) { %>
+              <% unpaidStaff.forEach(st => { %>
+                <tr>
+                  <td class="ps-3">
+                    <a href="/staff/<%= st._id %>" class="fw-bold text-dark text-decoration-none">
+                      <%= st.name %>
+                    </a>
+                  </td>
+                  <td><%= st.position %></td>
+                  <td><span class="badge bg-light text-dark border"><%= st.salaryFrequency %></span></td>
+                  <td>Day <%= st.paymentDay || 1 %> of month</td>
+                  <td class="text-end fw-bold text-dark">
+                    <%= currency %><%= st.salary.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                  </td>
+                  <td class="text-end pe-3">
+                    <a href="/staff/<%= st._id %>" class="btn btn-xs btn-primary">
+                      <i class="bi bi-cash-stack me-1"></i> Disburse Salary
+                    </a>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                  <i class="bi bi-check-circle-fill text-success fs-2 d-block mb-1"></i>
+                  <span class="fw-semibold">All staff salaries disbursed!</span>
+                  <p class="text-xs mb-0">No pending payroll commitments for <%= currentMonth %>.</p>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Expenses & Electricity Dues -->
+  <div class="tab-pane fade <%= activeTab === 'expenses' ? 'show active' : '' %>" id="expenses" role="tabpanel">
+    <div class="card-business p-0 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Type &amp; Description</th>
+              <th>Category</th>
+              <th>Due Date</th>
+              <th class="text-end">Amount</th>
+              <th class="text-center">Status</th>
+              <th class="text-end pe-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Operating Expenses -->
+            <% if (expenses && expenses.length > 0) { %>
+              <% expenses.forEach(exp => { %>
+                <tr>
+                  <td class="ps-3">
+                    <div class="fw-semibold text-dark"><%= exp.title %></div>
+                    <% if (exp.notes) { %><span class="text-muted text-xs"><%= exp.notes %></span><% } %>
+                  </td>
+                  <td><span class="badge bg-secondary-subtle text-secondary"><%= exp.category %></span></td>
+                  <td>
+                    <div class="text-xs <%= exp.paymentStatus === 'Overdue' ? 'text-danger fw-semibold' : 'text-dark' %>">
+                      <%= exp.dueDate ? new Date(exp.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No Due Date' %>
+                    </div>
+                  </td>
+                  <td class="text-end fw-bold text-dark"><%= currency %><%= exp.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                  <td class="text-center">
+                    <span class="badge <%= exp.paymentStatus === 'Overdue' ? 'bg-danger text-white' : 'bg-warning-subtle text-warning-emphasis' %>">
+                      <%= exp.paymentStatus %>
+                    </span>
+                  </td>
+                  <td class="text-end pe-3">
+                    <form action="/payments/expense/<%= exp._id %>/pay" method="POST" class="d-inline m-0">
+                      <button type="submit" class="btn btn-xs btn-outline-success">
+                        <i class="bi bi-check-lg me-1"></i> Pay Expense
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+
+            <!-- Electricity Bills -->
+            <% if (electricity && electricity.length > 0) { %>
+              <% electricity.forEach(el => { %>
+                <tr>
+                  <td class="ps-3">
+                    <div class="fw-semibold text-dark">Electricity Bill: <%= el.billingMonth %></div>
+                    <span class="text-muted text-xs">Meter: <%= el.meterNumber %> &bull; <%= el.unitsConsumed %> units</span>
+                  </td>
+                  <td><span class="badge bg-warning-subtle text-warning-emphasis"><i class="bi bi-lightning-charge me-1"></i>Electricity</span></td>
+                  <td>
+                    <div class="text-xs <%= el.paymentStatus === 'Overdue' ? 'text-danger fw-semibold' : 'text-dark' %>">
+                      <%= new Date(el.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                    </div>
+                  </td>
+                  <td class="text-end fw-bold text-dark"><%= currency %><%= el.billAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                  <td class="text-center">
+                    <span class="badge <%= el.paymentStatus === 'Overdue' ? 'bg-danger text-white' : 'bg-warning-subtle text-warning-emphasis' %>">
+                      <%= el.paymentStatus %>
+                    </span>
+                  </td>
+                  <td class="text-end pe-3">
+                    <form action="/payments/electricity/<%= el._id %>/pay" method="POST" class="d-inline m-0">
+                      <button type="submit" class="btn btn-xs btn-outline-success">
+                        <i class="bi bi-check-lg me-1"></i> Pay Bill
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+
+            <% if ((!expenses || expenses.length === 0) && (!electricity || electricity.length === 0)) { %>
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                  <i class="bi bi-check-circle-fill text-success fs-2 d-block mb-1"></i>
+                  <span class="fw-semibold">No pending expenses or utility bills!</span>
+                  <p class="text-xs mb-0">All operating expenditures are fully settled.</p>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,179 @@
+<%- include('../partials/header') %>
+
+<% const isEdit = !!expense; %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= isEdit ? `Edit Expense: ${expense.title}` : 'Record Business Expense' %></h1>
+    <p class="page-subtitle"><%= isEdit ? 'Update expenditure details, category, or payment settlement' : 'Log non-inventory operational costs, utility bills, and store overheads' %></p>
+  </div>
+  <div>
+    <a href="/expenses" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to Expenses
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="card-business">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-wallet2 me-1 text-primary"></i> <%= isEdit ? 'Expense Record Details' : 'New Expenditure Entry' %>
+        </span>
+      </div>
+
+      <div class="card-body">
+        <form 
+          action="<%= isEdit ? `/expenses/${expense._id}?_method=PUT` : '/expenses' %>" 
+          method="POST" 
+          class="needs-validation" 
+          novalidate
+        >
+          <div class="row g-3">
+            <!-- Expense Title -->
+            <div class="col-12 col-md-8">
+              <label for="title" class="form-label required-field">Expense Title / Description</label>
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="title" 
+                name="title" 
+                value="<%= expense ? expense.title : '' %>" 
+                required 
+                placeholder="e.g. Shop Rent for September, Fiber Internet Bill, Packaging Boxes"
+              >
+              <div class="invalid-feedback">Please enter an expense title.</div>
+            </div>
+
+            <!-- Category -->
+            <div class="col-12 col-md-4">
+              <label for="category" class="form-label required-field">Category</label>
+              <select class="form-select form-select-sm" id="category" name="category" required>
+                <option value="" disabled <%= !expense ? 'selected' : '' %>>Select Category...</option>
+                <% categories.forEach(cat => { %>
+                  <option 
+                    value="<%= cat %>" 
+                    <%= expense && expense.category === cat ? 'selected' : '' %>
+                  >
+                    <%= cat %>
+                  </option>
+                <% }) %>
+              </select>
+              <div class="invalid-feedback">Please choose a category.</div>
+            </div>
+
+            <!-- Amount -->
+            <div class="col-12 col-md-6">
+              <label for="amount" class="form-label required-field">Amount (<%= currency %>)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><%= currency %></span>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  class="form-control" 
+                  id="amount" 
+                  name="amount" 
+                  value="<%= expense ? expense.amount : '' %>" 
+                  required 
+                  placeholder="0.00"
+                >
+                <div class="invalid-feedback">Valid positive amount is required.</div>
+              </div>
+            </div>
+
+            <!-- Expense Date -->
+            <div class="col-12 col-md-6">
+              <label for="date" class="form-label required-field">Expense Date</label>
+              <% 
+                let dateVal = new Date().toISOString().split('T')[0];
+                if (expense && expense.date) {
+                  dateVal = new Date(expense.date).toISOString().split('T')[0];
+                }
+              %>
+              <input 
+                type="date" 
+                class="form-control form-control-sm" 
+                id="date" 
+                name="date" 
+                value="<%= dateVal %>" 
+                required
+              >
+              <div class="invalid-feedback">Please select a valid date.</div>
+            </div>
+
+            <!-- Payment Status -->
+            <div class="col-12 col-md-6">
+              <label for="paymentStatus" class="form-label">Payment Status</label>
+              <select class="form-select form-select-sm" id="paymentStatus" name="paymentStatus">
+                <option value="Paid" <%= (!expense || expense.paymentStatus === 'Paid') ? 'selected' : '' %>>Paid (Already Settled)</option>
+                <option value="Pending" <%= (expense && expense.paymentStatus === 'Pending') ? 'selected' : '' %>>Pending (Payable Later)</option>
+                <option value="Overdue" <%= (expense && expense.paymentStatus === 'Overdue') ? 'selected' : '' %>>Overdue</option>
+              </select>
+            </div>
+
+            <!-- Due Date (Optional) -->
+            <div class="col-12 col-md-6">
+              <label for="dueDate" class="form-label">Due Date <span class="text-muted text-xs">(If payable later)</span></label>
+              <% 
+                let dueDateVal = '';
+                if (expense && expense.dueDate) {
+                  dueDateVal = new Date(expense.dueDate).toISOString().split('T')[0];
+                }
+              %>
+              <input 
+                type="date" 
+                class="form-control form-control-sm" 
+                id="dueDate" 
+                name="dueDate" 
+                value="<%= dueDateVal %>"
+              >
+            </div>
+
+            <!-- Recurring Checkbox -->
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  role="switch" 
+                  id="recurring" 
+                  name="recurring" 
+                  value="true" 
+                  <%= (expense && expense.recurring) ? 'checked' : '' %>
+                >
+                <label class="form-check-label text-sm fw-medium text-dark" for="recurring">
+                  Recurring Expense
+                </label>
+                <div class="text-muted text-xs">Flag this as a repeating monthly overhead (e.g., store rent, internet plan, accounting fees).</div>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="col-12">
+              <label for="notes" class="form-label">Notes &amp; Reference <span class="text-muted text-xs">(Optional)</span></label>
+              <textarea 
+                class="form-control form-control-sm" 
+                id="notes" 
+                name="notes" 
+                rows="3" 
+                placeholder="Add vendor invoice number, payment transaction reference, or details..."
+              ><%= expense ? (expense.notes || '') : '' %></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <a href="/expenses" class="btn btn-sm btn-light">Cancel</a>
+            <button type="submit" class="btn btn-sm btn-primary px-4">
+              <i class="bi <%= isEdit ? 'bi-check-lg' : 'bi-plus-circle' %> me-1"></i>
+              <%= isEdit ? 'Save Changes' : 'Record Expense' %>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

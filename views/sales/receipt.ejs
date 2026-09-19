@@ -1,0 +1,218 @@
+<%- include('../partials/header') %>
+
+<div class="page-header d-print-none">
+  <div>
+    <h1 class="page-title">
+      Receipt #<%= sale.invoiceNumber %>
+      <% if (sale.paymentStatus === 'Paid') { %>
+        <span class="badge-status status-paid fs-6 ms-2">Paid</span>
+      <% } else if (sale.paymentStatus === 'Partially Paid') { %>
+        <span class="badge-status status-warning fs-6 ms-2">Partial</span>
+      <% } else { %>
+        <span class="badge-status status-pending fs-6 ms-2">Credit Due</span>
+      <% } %>
+    </h1>
+    <p class="page-subtitle">Billed on <%= new Date(sale.saleDate).toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/sales/pos" class="btn btn-sm btn-primary">
+      <i class="bi bi-calculator me-1"></i> New POS Sale
+    </a>
+    <a href="/sales" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-receipt me-1"></i> Sales History
+    </a>
+    <button type="button" class="btn btn-sm btn-dark" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i> Print Receipt
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-sm btn-outline-danger" 
+      onclick="confirmDeleteSale('<%= sale._id %>', '<%= sale.invoiceNumber %>')"
+    >
+      <i class="bi bi-trash me-1"></i> Void
+    </button>
+  </div>
+</div>
+
+<!-- Receipt Container -->
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8 col-lg-6">
+    <div class="card-business p-4 receipt-printable-box shadow-sm">
+      <!-- Store Header -->
+      <div class="text-center pb-3 mb-3 border-bottom">
+        <h3 class="fw-bold text-dark mb-1">
+          <i class="bi bi-briefcase-fill text-primary me-1"></i> <%= settings.businessName || currentBusinessName %>
+        </h3>
+        <div class="text-muted small">
+          <%= settings.address || 'Retail & Supermarket Store' %><br>
+          <% if (settings.businessPhone) { %>Phone: <%= settings.businessPhone %><% } %>
+        </div>
+        <div class="badge bg-light text-dark border mt-2 px-3 py-1 text-uppercase letter-spacing-1">
+          Tax Invoice / Cash Receipt
+        </div>
+      </div>
+
+      <!-- Bill Metadata -->
+      <div class="row small mb-3">
+        <div class="col-6">
+          <span class="text-muted">Invoice #:</span> <strong class="text-dark">#<%= sale.invoiceNumber %></strong><br>
+          <span class="text-muted">Date:</span> <%= new Date(sale.saleDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) %><br>
+          <span class="text-muted">Time:</span> <%= new Date(sale.saleDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) %>
+        </div>
+        <div class="col-6 text-end">
+          <span class="text-muted">Customer:</span><br>
+          <strong class="text-dark"><%= sale.customerName %></strong><br>
+          <% if (sale.customerPhone) { %><span class="text-muted"><%= sale.customerPhone %></span><br><% } %>
+          <% if (sale.customer?.loyaltyLevel) { %>
+            <span class="badge bg-warning-subtle text-dark border border-warning" style="font-size: 10px;">
+              <%= sale.customer.loyaltyLevel %> Member
+            </span>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="table-responsive mb-3">
+        <table class="table table-sm table-business mb-0">
+          <thead class="bg-light">
+            <tr style="font-size: 11px;">
+              <th>Item Description</th>
+              <th class="text-center" style="width: 50px;">Qty</th>
+              <th class="text-end" style="width: 80px;">Rate</th>
+              <th class="text-end" style="width: 90px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sale.items.forEach(it => { %>
+              <tr>
+                <td>
+                  <span class="fw-semibold text-dark"><%= it.name %></span>
+                  <% if (it.product?.sku) { %>
+                    <small class="text-muted d-block" style="font-size: 10px;">SKU: <%= it.product.sku %></small>
+                  <% } %>
+                </td>
+                <td class="text-center fw-medium"><%= it.quantity %></td>
+                <td class="text-end text-muted"><%= currency %><%= it.unitPrice.toFixed(2) %></td>
+                <td class="text-end fw-bold text-dark"><%= currency %><%= it.subtotal.toFixed(2) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Financial Totals -->
+      <div class="border-top pt-2 mb-3">
+        <div class="d-flex justify-content-between small mb-1">
+          <span class="text-muted">Subtotal:</span>
+          <span class="text-dark fw-semibold"><%= currency %><%= sale.subtotalAmount.toFixed(2) %></span>
+        </div>
+        <% if (sale.discountAmount > 0) { %>
+          <div class="d-flex justify-content-between small mb-1 text-success">
+            <span>Loyalty Discount (<%= sale.discountPercentage %>%):</span>
+            <span>- <%= currency %><%= sale.discountAmount.toFixed(2) %></span>
+          </div>
+        <% } %>
+        <hr class="my-2 text-muted opacity-25">
+        <div class="d-flex justify-content-between fs-5 fw-bold text-dark mb-2">
+          <span>Net Total Payable:</span>
+          <span class="text-primary"><%= currency %><%= sale.finalAmount.toFixed(2) %></span>
+        </div>
+
+        <div class="p-2 bg-light rounded-2 small border">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Payment Mode:</span>
+            <span class="fw-semibold text-dark"><%= sale.paymentMethod %></span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Amount Paid:</span>
+            <span class="fw-bold text-success"><%= currency %><%= sale.paidAmount.toFixed(2) %></span>
+          </div>
+          <% if (sale.dueAmount > 0) { %>
+            <div class="d-flex justify-content-between text-danger fw-bold">
+              <span>Balance Credit Due:</span>
+              <span><%= currency %><%= sale.dueAmount.toFixed(2) %></span>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Internal Profit Summary (Hidden when customer print) -->
+      <div class="p-2 bg-light rounded-2 small border mb-3 d-print-none">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted" style="font-size: 11px;">
+            <i class="bi bi-shield-lock me-1"></i> Staff View (COGS &amp; Gross Margin):
+          </span>
+          <span class="badge bg-success-subtle text-success border border-success-subtle">
+            Profit: <%= currency %><%= sale.grossProfit.toFixed(2) %> (<%= sale.finalAmount > 0 ? ((sale.grossProfit / sale.finalAmount) * 100).toFixed(0) : 0 %>%)
+          </span>
+        </div>
+      </div>
+
+      <!-- Receipt Footer -->
+      <div class="text-center pt-3 border-top text-muted small">
+        <p class="mb-1 fw-medium text-dark">Thank you for shopping with us!</p>
+        <p class="mb-0" style="font-size: 11px;">Please retain this receipt for warranty and returns &bull; Powered by Smart Business Manager</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Void Sale Confirmation -->
+<div class="modal fade" id="deleteSaleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i> Void Sales Invoice
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-2">Are you sure you want to void invoice <strong id="deleteInvoiceName" class="text-dark"></strong>?</p>
+        <div class="alert alert-warning py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i> Voiding this invoice will restore sold item quantities back to product inventory and reverse customer lifetime spend and credit balances.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteSaleForm" method="POST" action="">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="btn btn-sm btn-danger">Void Invoice &amp; Restock</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media print {
+    body {
+      background: white !important;
+    }
+    .app-sidebar, .app-main > nav, .page-header, .btn, .sidebar-backdrop {
+      display: none !important;
+    }
+    .app-main, .app-content {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .receipt-printable-box {
+      box-shadow: none !important;
+      border: none !important;
+      padding: 0 !important;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+  }
+</style>
+
+<script>
+  function confirmDeleteSale(id, invoiceNumber) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteSaleModal'));
+    document.getElementById('deleteInvoiceName').textContent = '#' + invoiceNumber;
+    document.getElementById('deleteSaleForm').action = '/sales/' + id + '?_method=DELETE';
+    modal.show();
+  }
+</script>
+
+<%- include('../partials/footer') %>

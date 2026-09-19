@@ -1,0 +1,258 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Customer Accounts &amp; Loyalty</h1>
+    <p class="page-subtitle">Track customer profiles, loyalty tiers, credit dues, and purchase history</p>
+  </div>
+  <div>
+    <a href="/customers/new" class="btn btn-sm btn-primary">
+      <i class="bi bi-person-plus me-1"></i> Add New Customer
+    </a>
+  </div>
+</div>
+
+<!-- Customer KPI Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Customers</span>
+      <div class="stat-value text-dark"><%= summary.totalCustomers %></div>
+      <div class="stat-subtext text-muted">Registered shopper accounts</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Lifetime Spend</span>
+      <div class="stat-value text-primary"><%= currency %><%= summary.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">Gross customer revenue</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Outstanding Dues</span>
+      <div class="stat-value <%= summary.totalDue > 0 ? 'text-danger' : 'text-dark' %>">
+        <%= currency %><%= summary.totalDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext <%= summary.totalDue > 0 ? 'text-danger fw-medium' : 'text-muted' %>">
+        <%= summary.totalDue > 0 ? 'Pending credit receivables' : 'All accounts settled' %>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Loyalty Shoppers</span>
+      <div class="stat-value text-success"><%= summary.vipCount %></div>
+      <div class="stat-subtext text-muted">VIP &amp; Frequent members</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card-business mb-3 p-3">
+  <form action="/customers" method="GET" class="row g-2 align-items-center">
+    <div class="col-12 col-md-4">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+        <input 
+          type="text" 
+          name="search" 
+          class="form-control border-start-0 ps-0" 
+          placeholder="Search by name, phone, email, or address..." 
+          value="<%= filters.search %>"
+        >
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <select name="loyalty" class="form-select form-select-sm">
+        <option value="">All Loyalty Tiers</option>
+        <option value="VIP" <%= filters.loyalty === 'VIP' ? 'selected' : '' %>>VIP Tier</option>
+        <option value="Frequent" <%= filters.loyalty === 'Frequent' ? 'selected' : '' %>>Frequent Tier</option>
+        <option value="Regular" <%= filters.loyalty === 'Regular' ? 'selected' : '' %>>Regular Tier</option>
+        <option value="Standard" <%= filters.loyalty === 'Standard' ? 'selected' : '' %>>Standard Tier</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <select name="balance" class="form-select form-select-sm">
+        <option value="">All Balances</option>
+        <option value="due" <%= filters.balance === 'due' ? 'selected' : '' %>>Has Outstanding Dues</option>
+        <option value="clear" <%= filters.balance === 'clear' ? 'selected' : '' %>>Zero / Clear Balance</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-1">
+      <button type="submit" class="btn btn-sm btn-secondary w-100">
+        Filter
+      </button>
+    </div>
+    <% if (filters.search || filters.loyalty || filters.balance) { %>
+      <div class="col-6 col-md-2">
+        <a href="/customers" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-x-circle me-1"></i> Clear
+        </a>
+      </div>
+    <% } %>
+  </form>
+</div>
+
+<!-- Customers Directory Table -->
+<div class="card-business">
+  <div class="card-body p-0">
+    <% if (customers && customers.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-business table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Contact Info</th>
+              <th>Loyalty Tier</th>
+              <th>Discount</th>
+              <th>Lifetime Spend</th>
+              <th>Outstanding Balance</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% customers.forEach(c => { %>
+              <tr>
+                <td>
+                  <a href="/customers/<%= c._id %>" class="text-dark fw-bold text-decoration-none hover-primary">
+                    <%= c.name %>
+                  </a>
+                  <% if (c.notes) { %>
+                    <small class="text-muted d-block" style="font-size: 11px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      <%= c.notes %>
+                    </small>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="text-dark small"><i class="bi bi-telephone me-1 text-muted"></i> <%= c.phone %></div>
+                  <% if (c.email) { %>
+                    <div class="text-muted" style="font-size: 11px;"><i class="bi bi-envelope me-1"></i> <%= c.email %></div>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (c.loyaltyLevel === 'VIP') { %>
+                    <span class="badge bg-warning text-dark border border-warning">
+                      <i class="bi bi-star-fill text-dark me-1"></i> VIP
+                    </span>
+                  <% } else if (c.loyaltyLevel === 'Frequent') { %>
+                    <span class="badge bg-info text-dark border border-info">
+                      <i class="bi bi-gem me-1"></i> Frequent
+                    </span>
+                  <% } else if (c.loyaltyLevel === 'Regular') { %>
+                    <span class="badge bg-primary text-white">Regular</span>
+                  <% } else { %>
+                    <span class="badge bg-light text-muted border">Standard</span>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="fw-semibold <%= c.discountPercentage > 0 ? 'text-success' : 'text-muted' %>">
+                    <%= c.discountPercentage %>%
+                  </span>
+                </td>
+                <td class="fw-bold text-dark">
+                  <%= currency %><%= c.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+                <td class="<%= c.outstandingBalance > 0 ? 'text-danger fw-bold' : 'text-muted' %>">
+                  <%= currency %><%= c.outstandingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                  <% if (c.outstandingBalance > 0) { %>
+                    <span class="badge bg-danger-subtle text-danger ms-1" style="font-size: 10px;">Due</span>
+                  <% } %>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <a href="/customers/<%= c._id %>" class="btn btn-outline-secondary" title="View Profile & Ledger">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="/customers/<%= c._id %>/edit" class="btn btn-outline-secondary" title="Edit Customer">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button 
+                      type="button" 
+                      class="btn btn-outline-danger" 
+                      title="Delete Customer"
+                      onclick="confirmDeleteCustomer('<%= c._id %>', '<%= c.name %>', <%= c.outstandingBalance %>)"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty-state py-5 text-center">
+        <i class="bi bi-people fs-1 text-secondary mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark">No Customers Found</h5>
+        <p class="text-muted small mb-4">
+          <% if (filters.search || filters.loyalty || filters.balance) { %>
+            No customers match the current filter criteria.
+          <% } else { %>
+            Start building your customer relationship directory to reward shoppers and monitor credit balances.
+          <% } %>
+        </p>
+        <a href="/customers/new" class="btn btn-sm btn-primary">
+          <i class="bi bi-person-plus me-1"></i> Add First Customer
+        </a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Modal for Customer Deletion Confirmation -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i> Delete Customer Account
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-2">Are you sure you want to delete customer <strong id="deleteCustomerName" class="text-dark"></strong>?</p>
+        <div id="deleteWarningDue" class="alert alert-danger py-2 small mb-0 d-none">
+          <i class="bi bi-x-circle me-1"></i> This customer has an active outstanding balance. Settle dues before deleting.
+        </div>
+        <div id="deleteNormalWarning" class="alert alert-warning py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i> Customers with existing transaction records cannot be deleted to preserve accounting ledger integrity.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteCustomerForm" method="POST" action="">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="btn btn-sm btn-danger" id="deleteConfirmBtn">Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function confirmDeleteCustomer(id, name, dueAmount) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteCustomerModal'));
+    document.getElementById('deleteCustomerName').textContent = name;
+    document.getElementById('deleteCustomerForm').action = '/customers/' + id + '?_method=DELETE';
+    
+    const warningDue = document.getElementById('deleteWarningDue');
+    const warningNormal = document.getElementById('deleteNormalWarning');
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+
+    if (dueAmount > 0) {
+      warningDue.classList.remove('d-none');
+      warningNormal.classList.add('d-none');
+      confirmBtn.disabled = true;
+    } else {
+      warningDue.classList.add('d-none');
+      warningNormal.classList.remove('d-none');
+      confirmBtn.disabled = false;
+    }
+
+    modal.show();
+  }
+</script>
+
+<%- include('../partials/footer') %>

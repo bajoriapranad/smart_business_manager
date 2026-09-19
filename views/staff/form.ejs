@@ -1,0 +1,200 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= isEdit ? `Edit Employee - ${staff.name}` : 'Register New Employee' %></h1>
+    <p class="page-subtitle"><%= isEdit ? 'Update job title, compensation, payout day, and employment status' : 'Add a new staff member to the payroll and team roster' %></p>
+  </div>
+  <div>
+    <a href="/staff" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to Roster
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="card-business">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-person-badge me-1 text-primary"></i> Employee Profile &amp; Compensation Agreement
+        </span>
+      </div>
+      <div class="card-body">
+        <form 
+          action="<%= isEdit ? `/staff/${staff._id}?_method=PUT` : '/staff' %>" 
+          method="POST" 
+          class="needs-validation" 
+          novalidate
+        >
+          <div class="row g-3">
+            <!-- Full Name -->
+            <div class="col-12 col-md-6">
+              <label for="name" class="form-label required-field">Full Name</label>
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="name" 
+                name="name" 
+                value="<%= staff.name || '' %>" 
+                required 
+                placeholder="e.g. Ramesh Kumar"
+              >
+              <div class="invalid-feedback">Employee name is required.</div>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="col-12 col-md-6">
+              <label for="phone" class="form-label required-field">Contact Phone Number</label>
+              <input 
+                type="tel" 
+                class="form-control form-control-sm" 
+                id="phone" 
+                name="phone" 
+                value="<%= staff.phone || '' %>" 
+                required 
+                placeholder="e.g. 9811223344"
+              >
+              <div class="invalid-feedback">Valid contact number is required.</div>
+            </div>
+
+            <!-- Job Position -->
+            <div class="col-12 col-md-6">
+              <label for="position" class="form-label required-field">Job Position / Title</label>
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="position" 
+                name="position" 
+                value="<%= staff.position || '' %>" 
+                required 
+                list="positionSuggestions"
+                placeholder="e.g. Store Cashier"
+              >
+              <datalist id="positionSuggestions">
+                <option value="Store Manager">
+                <option value="Cashier">
+                <option value="Sales Associate">
+                <option value="Delivery Agent">
+                <option value="Warehouse Helper">
+                <option value="Accountant">
+                <option value="Inventory Supervisor">
+              </datalist>
+              <div class="invalid-feedback">Job position is required.</div>
+            </div>
+
+            <!-- Joining Date -->
+            <div class="col-12 col-md-6">
+              <label for="joiningDate" class="form-label">Date of Joining</label>
+              <input 
+                type="date" 
+                class="form-control form-control-sm" 
+                id="joiningDate" 
+                name="joiningDate" 
+                value="<%= today %>"
+              >
+            </div>
+
+            <!-- Salary Amount -->
+            <div class="col-12 col-md-4">
+              <label for="salary" class="form-label required-field">Salary Amount (<%= currency %>)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><%= currency %></span>
+                <input 
+                  type="number" 
+                  class="form-control text-end fw-bold" 
+                  id="salary" 
+                  name="salary" 
+                  min="0" 
+                  step="0.01" 
+                  value="<%= staff.salary !== undefined ? staff.salary : '15000.00' %>" 
+                  required
+                >
+              </div>
+              <div class="invalid-feedback">Valid salary amount is required.</div>
+            </div>
+
+            <!-- Salary Frequency -->
+            <div class="col-6 col-md-4">
+              <label for="salaryFrequency" class="form-label">Payment Frequency</label>
+              <select name="salaryFrequency" id="salaryFrequency" class="form-select form-select-sm">
+                <option value="Monthly" <%= (staff.salaryFrequency || 'Monthly') === 'Monthly' ? 'selected' : '' %>>Monthly</option>
+                <option value="Weekly" <%= staff.salaryFrequency === 'Weekly' ? 'selected' : '' %>>Weekly</option>
+                <option value="Daily" <%= staff.salaryFrequency === 'Daily' ? 'selected' : '' %>>Daily</option>
+              </select>
+            </div>
+
+            <!-- Payout Day of Month -->
+            <div class="col-6 col-md-4">
+              <label for="paymentDay" class="form-label">Scheduled Pay Day</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text">Day</span>
+                <input 
+                  type="number" 
+                  class="form-control text-center" 
+                  id="paymentDay" 
+                  name="paymentDay" 
+                  min="1" 
+                  max="31" 
+                  value="<%= staff.paymentDay || 1 %>"
+                >
+                <span class="input-group-text">of month</span>
+              </div>
+            </div>
+
+            <!-- Employment Status -->
+            <div class="col-12 col-md-6">
+              <label for="status" class="form-label">Employment Status</label>
+              <select name="status" id="status" class="form-select form-select-sm">
+                <option value="Active" <%= (staff.status || 'Active') === 'Active' ? 'selected' : '' %>>Active (On Duty)</option>
+                <option value="On Leave" <%= staff.status === 'On Leave' ? 'selected' : '' %>>On Leave</option>
+                <option value="Inactive" <%= staff.status === 'Inactive' ? 'selected' : '' %>>Inactive (Left / Relieved)</option>
+              </select>
+            </div>
+
+            <!-- Notes / Remarks -->
+            <div class="col-12">
+              <label for="notes" class="form-label">Employment Notes &amp; Terms</label>
+              <textarea 
+                class="form-control form-control-sm" 
+                id="notes" 
+                name="notes" 
+                rows="2" 
+                placeholder="e.g. Bank IFSC: SBIN0001234, Account: 1234567890, emergency contact..."
+              ><%= staff.notes || '' %></textarea>
+            </div>
+          </div>
+
+          <hr class="my-4 text-muted opacity-25">
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="/staff<%= isEdit ? `/${staff._id}` : '' %>" class="btn btn-sm btn-outline-secondary">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-sm btn-primary">
+              <i class="bi bi-check-circle me-1"></i> <%= isEdit ? 'Save Employee Profile' : 'Register Employee' %>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
+
+<%- include('../partials/footer') %>

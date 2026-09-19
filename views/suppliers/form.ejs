@@ -1,0 +1,143 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= isEdit ? 'Edit Supplier' : 'Add New Supplier' %></h1>
+    <p class="page-subtitle"><%= isEdit ? 'Update supplier contact details, payment terms, and credentials' : 'Register a new wholesale vendor or manufacturer' %></p>
+  </div>
+  <div>
+    <a href="/suppliers" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to Suppliers
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="card-business p-4">
+      <form action="<%= isEdit ? '/suppliers/' + supplier._id + '?_method=PUT' : '/suppliers' %>" method="POST">
+        
+        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+          <i class="bi bi-building text-primary me-1"></i> Supplier Information
+        </h6>
+
+        <div class="row g-3 mb-4">
+          <!-- Supplier Name -->
+          <div class="col-12 col-md-6">
+            <label for="name" class="form-label fw-semibold small text-secondary">Contact Person / Vendor Name <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="name" 
+              name="name" 
+              placeholder="e.g. Ramesh Patel" 
+              value="<%= supplier.name || '' %>" 
+              required
+            >
+          </div>
+
+          <!-- Company Name -->
+          <div class="col-12 col-md-6">
+            <label for="company" class="form-label fw-semibold small text-secondary">Company / Agency Name</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="company" 
+              name="company" 
+              placeholder="e.g. Metro Wholesale Ltd" 
+              value="<%= supplier.company || '' %>"
+            >
+          </div>
+
+          <!-- Phone -->
+          <div class="col-12 col-md-6">
+            <label for="phone" class="form-label fw-semibold small text-secondary">Phone Number <span class="text-danger">*</span></label>
+            <input 
+              type="tel" 
+              class="form-control" 
+              id="phone" 
+              name="phone" 
+              placeholder="e.g. 9811002233" 
+              value="<%= supplier.phone || '' %>" 
+              required
+            >
+          </div>
+
+          <!-- Email -->
+          <div class="col-12 col-md-6">
+            <label for="email" class="form-label fw-semibold small text-secondary">Email Address</label>
+            <input 
+              type="email" 
+              class="form-control" 
+              id="email" 
+              name="email" 
+              placeholder="orders@vendor.com" 
+              value="<%= supplier.email || '' %>"
+            >
+          </div>
+
+          <!-- GST Number -->
+          <div class="col-12 col-md-6">
+            <label for="gstNumber" class="form-label fw-semibold small text-secondary">GST / Tax Identification</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="gstNumber" 
+              name="gstNumber" 
+              placeholder="e.g. 07AAAAA0000A1Z5" 
+              value="<%= supplier.gstNumber || '' %>"
+              style="text-transform: uppercase;"
+            >
+          </div>
+
+          <!-- Payment Terms -->
+          <div class="col-12 col-md-6">
+            <label for="paymentTerms" class="form-label fw-semibold small text-secondary">Credit / Payment Terms</label>
+            <select class="form-select" id="paymentTerms" name="paymentTerms">
+              <option value="Immediate" <%= supplier.paymentTerms === 'Immediate' ? 'selected' : '' %>>Immediate / Cash on Delivery</option>
+              <option value="Net 7" <%= supplier.paymentTerms === 'Net 7' ? 'selected' : '' %>>Net 7 Days</option>
+              <option value="Net 15" <%= supplier.paymentTerms === 'Net 15' ? 'selected' : '' %>>Net 15 Days</option>
+              <option value="Net 30" <%= !supplier.paymentTerms || supplier.paymentTerms === 'Net 30' ? 'selected' : '' %>>Net 30 Days</option>
+              <option value="Net 60" <%= supplier.paymentTerms === 'Net 60' ? 'selected' : '' %>>Net 60 Days</option>
+            </select>
+          </div>
+
+          <!-- Address -->
+          <div class="col-12">
+            <label for="address" class="form-label fw-semibold small text-secondary">Physical Address / Depot Location</label>
+            <textarea 
+              class="form-control" 
+              id="address" 
+              name="address" 
+              rows="2" 
+              placeholder="Wholesale depot, street address, city, pincode..."
+            ><%= supplier.address || '' %></textarea>
+          </div>
+
+          <!-- Notes -->
+          <div class="col-12">
+            <label for="notes" class="form-label fw-semibold small text-secondary">Internal Business Notes</label>
+            <textarea 
+              class="form-control" 
+              id="notes" 
+              name="notes" 
+              rows="2" 
+              placeholder="Preferred delivery timings, representative names, special discount agreements..."
+            ><%= supplier.notes || '' %></textarea>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+          <a href="/suppliers" class="btn btn-sm btn-outline-secondary px-4">Cancel</a>
+          <button type="submit" class="btn btn-sm btn-primary px-4">
+            <i class="bi bi-check-circle me-1"></i> <%= isEdit ? 'Update Supplier' : 'Save Supplier' %>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

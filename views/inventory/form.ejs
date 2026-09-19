@@ -1,0 +1,262 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= isEdit ? 'Edit Product' : 'Add New Product' %></h1>
+    <p class="page-subtitle"><%= isEdit ? 'Update product details, pricing, and stock thresholds' : 'Register a new item in your inventory catalog' %></p>
+  </div>
+  <div>
+    <a href="/inventory" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to Products
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-10">
+    <div class="card-business p-4">
+      <form action="<%= isEdit ? '/inventory/' + product._id + '?_method=PUT' : '/inventory' %>" method="POST">
+        
+        <!-- Section 1: Basic Information -->
+        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+          <i class="bi bi-info-circle text-primary me-1"></i> Basic Identification
+        </h6>
+
+        <div class="row g-3 mb-4">
+          <!-- Product Name -->
+          <div class="col-12 col-md-8">
+            <label for="name" class="form-label fw-semibold small text-secondary">Product Name <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="name" 
+              name="name" 
+              placeholder="e.g. Royal Basmati Rice 5kg" 
+              value="<%= product.name || '' %>" 
+              required
+            >
+          </div>
+
+          <!-- SKU -->
+          <div class="col-12 col-md-4">
+            <label for="sku" class="form-label fw-semibold small text-secondary">SKU / Item Code <span class="text-danger">*</span></label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="sku" 
+              name="sku" 
+              placeholder="e.g. RCE-5KG-01" 
+              value="<%= product.sku || '' %>" 
+              style="text-transform: uppercase;"
+              required
+            >
+          </div>
+
+          <!-- Category -->
+          <div class="col-12 col-md-6">
+            <label for="category" class="form-label fw-semibold small text-secondary">Category <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <select class="form-select" id="category" name="category" required>
+                <option value="">Select Category</option>
+                <% categories.forEach(cat => { %>
+                  <option value="<%= cat._id %>" <%= product.category && product.category.toString() === cat._id.toString() ? 'selected' : '' %>>
+                    <%= cat.name %>
+                  </option>
+                <% }); %>
+              </select>
+              <a href="/inventory/categories" class="btn btn-outline-secondary btn-sm d-flex align-items-center" title="Manage Categories">
+                <i class="bi bi-plus"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Brand -->
+          <div class="col-12 col-md-6">
+            <label for="brand" class="form-label fw-semibold small text-secondary">Brand / Manufacturer</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="brand" 
+              name="brand" 
+              placeholder="e.g. Royal Feast" 
+              value="<%= product.brand || '' %>"
+            >
+          </div>
+
+          <!-- Description -->
+          <div class="col-12">
+            <label for="description" class="form-label fw-semibold small text-secondary">Description</label>
+            <textarea 
+              class="form-control" 
+              id="description" 
+              name="description" 
+              rows="2" 
+              placeholder="Product details, package type, specifications..."
+            ><%= product.description || '' %></textarea>
+          </div>
+        </div>
+
+        <!-- Section 2: Pricing & Stock Valuation -->
+        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+          <i class="bi bi-currency-rupee text-success me-1"></i> Pricing &amp; Stock Levels
+        </h6>
+
+        <div class="row g-3 mb-4">
+          <!-- Purchase Price -->
+          <div class="col-12 col-sm-6 col-md-3">
+            <label for="purchasePrice" class="form-label fw-semibold small text-secondary">Purchase Cost (Cost Price) <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted">₹</span>
+              <input 
+                type="number" 
+                step="0.01" 
+                min="0" 
+                class="form-control" 
+                id="purchasePrice" 
+                name="purchasePrice" 
+                placeholder="0.00" 
+                value="<%= product.purchasePrice !== undefined ? product.purchasePrice : '' %>" 
+                required
+              >
+            </div>
+          </div>
+
+          <!-- Selling Price -->
+          <div class="col-12 col-sm-6 col-md-3">
+            <label for="sellingPrice" class="form-label fw-semibold small text-secondary">Selling Price (Retail) <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted">₹</span>
+              <input 
+                type="number" 
+                step="0.01" 
+                min="0" 
+                class="form-control" 
+                id="sellingPrice" 
+                name="sellingPrice" 
+                placeholder="0.00" 
+                value="<%= product.sellingPrice !== undefined ? product.sellingPrice : '' %>" 
+                required
+              >
+            </div>
+          </div>
+
+          <!-- Current Stock -->
+          <div class="col-12 col-sm-6 col-md-3">
+            <label for="currentStock" class="form-label fw-semibold small text-secondary">Current Physical Stock <span class="text-danger">*</span></label>
+            <input 
+              type="number" 
+              min="0" 
+              class="form-control" 
+              id="currentStock" 
+              name="currentStock" 
+              placeholder="0" 
+              value="<%= product.currentStock !== undefined ? product.currentStock : '0' %>" 
+              required
+            >
+          </div>
+
+          <!-- Unit -->
+          <div class="col-12 col-sm-6 col-md-3">
+            <label for="unit" class="form-label fw-semibold small text-secondary">Measurement Unit</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="unit" 
+              name="unit" 
+              placeholder="pcs, kg, litre, box" 
+              value="<%= product.unit || 'pcs' %>"
+            >
+          </div>
+        </div>
+
+        <!-- Section 3: Inventory Thresholds & Supplier Details -->
+        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+          <i class="bi bi-sliders text-warning me-1"></i> Inventory Thresholds &amp; Sourcing
+        </h6>
+
+        <div class="row g-3 mb-4">
+          <!-- Minimum Stock -->
+          <div class="col-12 col-sm-4">
+            <label for="minimumStock" class="form-label fw-semibold small text-secondary">Minimum Stock (Reorder Alert)</label>
+            <input 
+              type="number" 
+              min="0" 
+              class="form-control" 
+              id="minimumStock" 
+              name="minimumStock" 
+              placeholder="5" 
+              value="<%= product.minimumStock !== undefined ? product.minimumStock : '5' %>"
+            >
+            <small class="text-muted" style="font-size: 11px;">Triggers Low Stock warning</small>
+          </div>
+
+          <!-- Recommended Stock -->
+          <div class="col-12 col-sm-4">
+            <label for="recommendedStock" class="form-label fw-semibold small text-secondary">Recommended Stock Level</label>
+            <input 
+              type="number" 
+              min="0" 
+              class="form-control" 
+              id="recommendedStock" 
+              name="recommendedStock" 
+              placeholder="20" 
+              value="<%= product.recommendedStock !== undefined ? product.recommendedStock : '20' %>"
+            >
+            <small class="text-muted" style="font-size: 11px;">Target inventory balance</small>
+          </div>
+
+          <!-- Maximum Stock -->
+          <div class="col-12 col-sm-4">
+            <label for="maximumStock" class="form-label fw-semibold small text-secondary">Maximum Stock Level</label>
+            <input 
+              type="number" 
+              min="0" 
+              class="form-control" 
+              id="maximumStock" 
+              name="maximumStock" 
+              placeholder="100" 
+              value="<%= product.maximumStock !== undefined ? product.maximumStock : '100' %>"
+            >
+            <small class="text-muted" style="font-size: 11px;">Overstocking ceiling</small>
+          </div>
+
+          <!-- Supplier -->
+          <div class="col-12 col-md-6">
+            <label for="supplier" class="form-label fw-semibold small text-secondary">Preferred Supplier</label>
+            <select class="form-select" id="supplier" name="supplier">
+              <option value="">None / Direct Purchase</option>
+              <% suppliers.forEach(sup => { %>
+                <option value="<%= sup._id %>" <%= product.supplier && product.supplier.toString() === sup._id.toString() ? 'selected' : '' %>>
+                  <%= sup.name %> <%= sup.company ? '(' + sup.company + ')' : '' %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <!-- Expiry Date -->
+          <div class="col-12 col-md-6">
+            <label for="expiryDate" class="form-label fw-semibold small text-secondary">Expiry Date (Optional)</label>
+            <input 
+              type="date" 
+              class="form-control" 
+              id="expiryDate" 
+              name="expiryDate" 
+              value="<%= product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : '' %>"
+            >
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+          <a href="/inventory" class="btn btn-sm btn-outline-secondary px-4">Cancel</a>
+          <button type="submit" class="btn btn-sm btn-primary px-4">
+            <i class="bi bi-check-circle me-1"></i> <%= isEdit ? 'Update Product' : 'Save Product' %>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

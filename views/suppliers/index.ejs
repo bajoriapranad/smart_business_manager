@@ -1,0 +1,165 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Suppliers &amp; Vendors</h1>
+    <p class="page-subtitle">Manage wholesale vendors, trade credits, purchase invoices, and payable balances</p>
+  </div>
+  <div>
+    <a href="/suppliers/new" class="btn btn-sm btn-primary">
+      <i class="bi bi-plus-circle me-1"></i> Add Supplier
+    </a>
+  </div>
+</div>
+
+<!-- Supplier Financial Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Suppliers</span>
+      <div class="stat-value text-dark"><%= summary.totalSuppliers %></div>
+      <div class="stat-subtext text-muted">Active vendor accounts</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Sourced</span>
+      <div class="stat-value text-primary"><%= currency %><%= summary.totalPurchases.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">Lifetime purchases</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Paid</span>
+      <div class="stat-value text-success"><%= currency %><%= summary.totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">Settled vendor payments</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Outstanding Payables</span>
+      <div class="stat-value <%= summary.totalDue > 0 ? 'text-danger' : 'text-dark' %>">
+        <%= currency %><%= summary.totalDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext <%= summary.totalDue > 0 ? 'text-danger fw-medium' : 'text-muted' %>">
+        <%= summary.totalDue > 0 ? 'Pending vendor dues' : 'All accounts clear' %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Toolbar -->
+<div class="card-business mb-3 p-3">
+  <form action="/suppliers" method="GET" class="row g-2 align-items-center">
+    <div class="col-12 col-md-6">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+        <input 
+          type="text" 
+          name="search" 
+          class="form-control border-start-0 ps-0" 
+          placeholder="Search by vendor name, company, phone, or GST..." 
+          value="<%= search || '' %>"
+        >
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <button type="submit" class="btn btn-sm btn-secondary w-100">
+        <i class="bi bi-filter me-1"></i> Search
+      </button>
+    </div>
+    <% if (search) { %>
+      <div class="col-6 col-md-2">
+        <a href="/suppliers" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-x-circle me-1"></i> Clear
+        </a>
+      </div>
+    <% } %>
+  </form>
+</div>
+
+<!-- Suppliers Directory Table -->
+<div class="card-business">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-business table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Vendor Name &amp; Company</th>
+            <th>Contact Details</th>
+            <th>GST Number</th>
+            <th>Terms</th>
+            <th>Total Sourced</th>
+            <th>Amount Paid</th>
+            <th>Outstanding Due</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (suppliers && suppliers.length > 0) { %>
+            <% suppliers.forEach(s => { %>
+              <tr>
+                <td>
+                  <a href="/suppliers/<%= s._id %>" class="fw-semibold text-dark text-decoration-none hover-primary">
+                    <%= s.name %>
+                  </a>
+                  <% if (s.company) { %>
+                    <small class="text-muted d-block" style="font-size: 11px;"><%= s.company %></small>
+                  <% } %>
+                </td>
+                <td>
+                  <div><i class="bi bi-telephone text-muted me-1 small"></i><%= s.phone %></div>
+                  <% if (s.email) { %>
+                    <div class="small text-muted"><i class="bi bi-envelope text-muted me-1 small"></i><%= s.email %></div>
+                  <% } %>
+                </td>
+                <td class="text-muted fw-mono" style="font-size: 12px;"><%= s.gstNumber || '—' %></td>
+                <td>
+                  <span class="badge bg-light text-dark border"><%= s.paymentTerms %></span>
+                </td>
+                <td class="fw-medium text-dark"><%= currency %><%= s.totalPurchases.toFixed(2) %></td>
+                <td class="text-success"><%= currency %><%= s.amountPaid.toFixed(2) %></td>
+                <td>
+                  <% if (s.amountDue > 0) { %>
+                    <span class="fw-bold text-danger"><%= currency %><%= s.amountDue.toFixed(2) %></span>
+                  <% } else { %>
+                    <span class="badge-status status-paid">Settled</span>
+                  <% } %>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <a href="/suppliers/<%= s._id %>" class="btn btn-light border py-0 px-2" title="View Statement & History">
+                      <i class="bi bi-journal-text"></i>
+                    </a>
+                    <a href="/suppliers/<%= s._id %>/edit" class="btn btn-light border py-0 px-2" title="Edit Vendor">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <form action="/suppliers/<%= s._id %>?_method=DELETE" method="POST" class="d-inline" onsubmit="return confirm('Delete supplier &quot;<%= s.name %>&quot;?');">
+                      <button type="submit" class="btn btn-light border py-0 px-2 text-danger" title="Delete Vendor">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-truck fs-3 d-block mb-2 text-secondary"></i>
+                No suppliers registered yet.
+                <div class="mt-2">
+                  <a href="/suppliers/new" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Add First Supplier
+                  </a>
+                </div>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

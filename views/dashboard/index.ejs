@@ -1,0 +1,357 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Business Dashboard</h1>
+    <p class="page-subtitle">Real-time overview of retail operations, stock, and profit performance</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <% if (typeof isDemoUser !== 'undefined' && isDemoUser) { %>
+      <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1">
+        <i class="bi bi-info-circle me-1"></i> Demo Sandbox Active
+      </span>
+    <% } %>
+    <span class="text-muted small">
+      <i class="bi bi-calendar3 me-1"></i> <%= new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) %>
+    </span>
+  </div>
+</div>
+
+<% if (!hasData) { %>
+  <!-- Empty State for Brand New Business Account -->
+  <div class="card-business p-4 text-center mb-4">
+    <div class="py-4" style="max-width: 520px; margin: 0 auto;">
+      <div class="d-inline-flex align-items-center justify-content-center bg-light border p-3 rounded-circle mb-3">
+        <i class="bi bi-shop text-primary fs-2"></i>
+      </div>
+      <h5 class="fw-bold text-dark mb-2">No Business Data Available</h5>
+      <p class="text-muted small mb-4">
+        Your business workspace is set up and ready! Start by adding your product catalog or entering initial stock to see real-time revenue, inventory valuation, and profit analysis.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="/inventory" class="btn btn-sm btn-primary">
+          <i class="bi bi-plus-circle me-1"></i> Add First Product
+        </a>
+        <a href="/suppliers" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-truck me-1"></i> Add Supplier
+        </a>
+        <a href="/customers" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-person-plus me-1"></i> Add Customer
+        </a>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<!-- 6 Core Business Stat Cards -->
+<div class="row g-3 mb-4">
+  <!-- 1. Today's Sales -->
+  <div class="col-12 col-sm-6 col-xl-2">
+    <div class="stat-card">
+      <span class="stat-label">Today's Sales</span>
+      <div class="stat-value text-dark"><%= currency %><%= metrics.todaySalesAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">
+        <% if (metrics.todaySalesCount > 0) { %>
+          <%= metrics.todaySalesCount %> order<%= metrics.todaySalesCount > 1 ? 's' : '' %> today
+        <% } else { %>
+          0 transactions today
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Today's Expenses -->
+  <div class="col-12 col-sm-6 col-xl-2">
+    <div class="stat-card">
+      <span class="stat-label">Today's Expenses</span>
+      <div class="stat-value text-dark"><%= currency %><%= metrics.todayExpenseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">
+        <% if (metrics.todayExpenseCount > 0) { %>
+          <%= metrics.todayExpenseCount %> logged expense<%= metrics.todayExpenseCount > 1 ? 's' : '' %>
+        <% } else { %>
+          0 expenses today
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Today's Profit -->
+  <div class="col-12 col-sm-6 col-xl-2">
+    <div class="stat-card">
+      <span class="stat-label">Today's Profit</span>
+      <div class="stat-value <%= metrics.todayNetProfit >= 0 ? 'text-success' : 'text-danger' %>">
+        <%= currency %><%= metrics.todayNetProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">
+        Gross: <%= currency %><%= metrics.todayGrossProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 }) %>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Total Stock Value -->
+  <div class="col-12 col-sm-6 col-xl-2">
+    <div class="stat-card">
+      <span class="stat-label">Total Stock Value</span>
+      <div class="stat-value text-dark"><%= currency %><%= metrics.totalStockValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">
+        <%= metrics.totalProductTypes %> product SKU<%= metrics.totalProductTypes !== 1 ? 's' : '' %>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Low Stock Items -->
+  <div class="col-12 col-sm-6 col-xl-2">
+    <div class="stat-card">
+      <span class="stat-label">Low Stock Items</span>
+      <div class="stat-value <%= metrics.lowStockCount > 0 ? 'text-danger' : 'text-success' %>">
+        <%= metrics.lowStockCount %>
+      </div>
+      <div class="stat-subtext <%= metrics.lowStockCount > 0 ? 'text-danger fw-medium' : 'text-muted' %>">
+        <% if (metrics.lowStockCount > 0) { %>
+          Requires reorder
+        <% } else { %>
+          All stock healthy
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Pending Payments -->
+  <div class="col-12 col-sm-6 col-xl-2">
+    <div class="stat-card">
+      <span class="stat-label">Pending Dues</span>
+      <div class="stat-value text-warning">
+        <%= currency %><%= (metrics.totalReceivables + metrics.totalPayables).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">
+        Due: <%= currency %><%= metrics.totalPayables.toLocaleString('en-IN', { maximumFractionDigits: 0 }) %> | Rec: <%= currency %><%= metrics.totalReceivables.toLocaleString('en-IN', { maximumFractionDigits: 0 }) %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Section: Tables & Quick Actions -->
+<div class="row g-3">
+  
+  <!-- Left Column: Low Stock Items & Recent Sales -->
+  <div class="col-12 col-lg-8">
+    
+    <!-- Low Stock Items Warning Table -->
+    <div class="card-business mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+          <i class="bi bi-exclamation-triangle text-warning me-1"></i> Stock Reorder Alerts
+        </span>
+        <% if (metrics.lowStockCount > 0) { %>
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+            <%= metrics.lowStockCount %> items critical
+          </span>
+        <% } %>
+      </div>
+      <div class="card-body p-0">
+        <% if (lowStockItems && lowStockItems.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-business table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Current Stock</th>
+                  <th>Min Level</th>
+                  <th>Status</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% lowStockItems.forEach(item => { %>
+                  <tr>
+                    <td class="fw-medium text-dark"><%= item.name %></td>
+                    <td class="text-muted"><%= item.category?.name || 'Unassigned' %></td>
+                    <td>
+                      <span class="fw-bold <%= item.currentStock === 0 ? 'text-danger' : 'text-warning' %>">
+                        <%= item.currentStock %> <%= item.unit %>
+                      </span>
+                    </td>
+                    <td class="text-muted"><%= item.minimumStock %> <%= item.unit %></td>
+                    <td>
+                      <% if (item.currentStock === 0) { %>
+                        <span class="badge-status status-overdue">Out of Stock</span>
+                      <% } else { %>
+                        <span class="badge-status status-low">Low Stock</span>
+                      <% } %>
+                    </td>
+                    <td class="text-end">
+                      <a href="/purchases" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11px;">
+                        + Reorder
+                      </a>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="p-3 text-center text-muted small">
+            <i class="bi bi-check-circle text-success me-1"></i> No low stock items. All inventory levels are above minimum thresholds.
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Recent Sales Table -->
+    <div class="card-business">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+          <i class="bi bi-clock-history text-secondary me-1"></i> Recent Sales Transactions
+        </span>
+        <a href="/sales" class="small text-primary text-decoration-none">View All Sales &rarr;</a>
+      </div>
+      <div class="card-body p-0">
+        <% if (recentSales && recentSales.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-business table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Customer</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recentSales.forEach(sale => { %>
+                  <tr>
+                    <td class="fw-medium text-dark"><%= sale.invoiceNumber %></td>
+                    <td><%= sale.customerName %></td>
+                    <td><%= sale.items.length %> product<%= sale.items.length > 1 ? 's' : '' %></td>
+                    <td class="fw-bold text-dark"><%= currency %><%= sale.finalAmount.toFixed(2) %></td>
+                    <td>
+                      <span class="badge bg-light text-dark border px-2 py-1"><%= sale.paymentMethod %></span>
+                    </td>
+                    <td>
+                      <% if (sale.paymentStatus === 'Paid') { %>
+                        <span class="badge-status status-paid">Paid</span>
+                      <% } else { %>
+                        <span class="badge-status status-pending"><%= sale.paymentStatus %></span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="p-3 text-center text-muted small">
+            No sales recorded yet. Use the checkout to record customer purchases.
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right Column: Quick Actions & Pending Dues -->
+  <div class="col-12 col-lg-4">
+    
+    <!-- Quick Actions -->
+    <div class="card-business mb-3">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-lightning-charge text-primary me-1"></i> Quick Actions
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a href="/sales" class="btn btn-sm btn-primary text-start d-flex align-items-center justify-content-between py-2">
+            <span><i class="bi bi-receipt me-2"></i> New Sale / Checkout</span>
+            <i class="bi bi-chevron-right small"></i>
+          </a>
+          <a href="/inventory" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center justify-content-between py-2">
+            <span><i class="bi bi-box-seam me-2"></i> Manage Inventory</span>
+            <i class="bi bi-chevron-right small"></i>
+          </a>
+          <a href="/purchases" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center justify-content-between py-2">
+            <span><i class="bi bi-cart-check me-2"></i> Record Purchase</span>
+            <i class="bi bi-chevron-right small"></i>
+          </a>
+          <a href="/expenses" class="btn btn-sm btn-outline-secondary text-start d-flex align-items-center justify-content-between py-2">
+            <span><i class="bi bi-wallet2 me-2"></i> Log Business Expense</span>
+            <i class="bi bi-chevron-right small"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Due Payments Panel -->
+    <div class="card-business">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+          <i class="bi bi-bell text-warning me-1"></i> Due Payments
+        </span>
+        <a href="/payments" class="small text-primary text-decoration-none">View All &rarr;</a>
+      </div>
+      <div class="card-body p-3">
+        
+        <!-- Supplier Payables -->
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-semibold text-secondary">Supplier Payables</span>
+            <span class="badge bg-light text-dark border"><%= currency %><%= metrics.totalPayables.toLocaleString('en-IN', { maximumFractionDigits: 0 }) %></span>
+          </div>
+          <% if (pendingPurchases && pendingPurchases.length > 0) { %>
+            <ul class="list-group list-group-flush border rounded-1">
+              <% pendingPurchases.forEach(p => { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-2 small">
+                  <div>
+                    <div class="fw-medium text-dark"><%= p.supplier?.company || p.supplier?.name || 'Supplier' %></div>
+                    <div class="text-muted" style="font-size: 11px;">Inv: <%= p.invoiceNumber %></div>
+                  </div>
+                  <div class="text-end">
+                    <div class="fw-bold text-danger"><%= currency %><%= p.remainingAmount.toFixed(2) %></div>
+                    <span class="badge-status status-pending" style="font-size: 10px;"><%= p.paymentStatus %></span>
+                  </div>
+                </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <div class="text-muted small border rounded p-2 bg-light text-center">
+              No outstanding supplier payments
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Customer Receivables -->
+        <div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-semibold text-secondary">Customer Credit Dues</span>
+            <span class="badge bg-light text-dark border"><%= currency %><%= metrics.totalReceivables.toLocaleString('en-IN', { maximumFractionDigits: 0 }) %></span>
+          </div>
+          <% if (pendingSales && pendingSales.length > 0) { %>
+            <ul class="list-group list-group-flush border rounded-1">
+              <% pendingSales.forEach(s => { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-2 small">
+                  <div>
+                    <div class="fw-medium text-dark"><%= s.customerName %></div>
+                    <div class="text-muted" style="font-size: 11px;">Inv: <%= s.invoiceNumber %></div>
+                  </div>
+                  <div class="text-end">
+                    <div class="fw-bold text-warning"><%= currency %><%= s.dueAmount.toFixed(2) %></div>
+                    <span class="badge-status status-pending" style="font-size: 10px;">Due</span>
+                  </div>
+                </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <div class="text-muted small border rounded p-2 bg-light text-center">
+              No customer dues pending
+            </div>
+          <% } %>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

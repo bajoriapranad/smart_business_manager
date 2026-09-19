@@ -1,0 +1,29 @@
+<% if (typeof success_msg !== 'undefined' && success_msg && success_msg.length > 0) { %>
+  <div class="alert alert-success alert-dismissible fade show flash-alert py-2 px-3" role="alert">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <div><%= success_msg %></div>
+    </div>
+    <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% } %>
+
+<% if (typeof error_msg !== 'undefined' && error_msg && error_msg.length > 0) { %>
+  <div class="alert alert-danger alert-dismissible fade show flash-alert py-2 px-3" role="alert">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div><%= error_msg %></div>
+    </div>
+    <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% } %>
+
+<% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+  <div class="alert alert-danger alert-dismissible fade show flash-alert py-2 px-3" role="alert">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-exclamation-circle-fill me-2"></i>
+      <div><%= error %></div>
+    </div>
+    <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% } %>

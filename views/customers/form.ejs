@@ -1,0 +1,210 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= isEdit ? 'Edit Customer' : 'Add New Customer' %></h1>
+    <p class="page-subtitle"><%= isEdit ? `Update contact and discount details for ${customer.name}` : 'Register a new customer for loyalty rewards and credit ledger tracking' %></p>
+  </div>
+  <div>
+    <a href="/customers" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to Directory
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="card-business">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-person-bounding-box me-1 text-primary"></i> Customer Profile &amp; Loyalty Configuration
+        </span>
+      </div>
+      <div class="card-body">
+        <form 
+          action="<%= isEdit ? `/customers/${customer._id}?_method=PUT` : '/customers' %>" 
+          method="POST" 
+          class="needs-validation" 
+          novalidate
+        >
+          <div class="row g-3">
+            <!-- Customer Name -->
+            <div class="col-12 col-md-6">
+              <label for="name" class="form-label required-field">Full Name</label>
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="name" 
+                name="name" 
+                value="<%= customer.name || '' %>" 
+                required 
+                placeholder="e.g. Rahul Sharma"
+              >
+              <div class="invalid-feedback">Customer name is required.</div>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="col-12 col-md-6">
+              <label for="phone" class="form-label required-field">Phone / Mobile Number</label>
+              <input 
+                type="tel" 
+                class="form-control form-control-sm" 
+                id="phone" 
+                name="phone" 
+                value="<%= customer.phone || '' %>" 
+                required 
+                placeholder="e.g. 9876543210"
+              >
+              <div class="invalid-feedback">Valid phone number is required.</div>
+            </div>
+
+            <!-- Email Address -->
+            <div class="col-12 col-md-6">
+              <label for="email" class="form-label">Email Address</label>
+              <input 
+                type="email" 
+                class="form-control form-control-sm" 
+                id="email" 
+                name="email" 
+                value="<%= customer.email || '' %>" 
+                placeholder="e.g. rahul@example.com"
+              >
+            </div>
+
+            <!-- Address / Locality -->
+            <div class="col-12 col-md-6">
+              <label for="address" class="form-label">Delivery Address / Locality</label>
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="address" 
+                name="address" 
+                value="<%= customer.address || '' %>" 
+                placeholder="e.g. Flat 402, Sunshine Apts"
+              >
+            </div>
+
+            <!-- Loyalty Tier Selection -->
+            <div class="col-12 col-md-6">
+              <label for="loyaltyLevel" class="form-label">Loyalty Tier</label>
+              <select name="loyaltyLevel" id="loyaltyLevel" class="form-select form-select-sm">
+                <% 
+                  const tiers = [
+                    { name: 'Standard', discount: 0 },
+                    { name: 'Regular', discount: 2 },
+                    { name: 'Frequent', discount: 5 },
+                    { name: 'VIP', discount: 10 }
+                  ];
+                %>
+                <% tiers.forEach(t => { 
+                  const tierConfig = loyaltyTiers.find(lt => lt.name === t.name);
+                  const discountVal = tierConfig ? tierConfig.discountPercent : t.discount;
+                %>
+                  <option 
+                    value="<%= t.name %>" 
+                    <%= (customer.loyaltyLevel || 'Standard') === t.name ? 'selected' : '' %>
+                    data-discount="<%= discountVal %>"
+                  >
+                    <%= t.name %> Tier (<%= discountVal %>% default discount)
+                  </option>
+                <% }); %>
+              </select>
+              <div class="form-text text-muted" style="font-size: 11px;">Selecting a tier automatically recommends a discount percentage.</div>
+            </div>
+
+            <!-- Personalized Discount Percentage -->
+            <div class="col-12 col-md-6">
+              <label for="discountPercentage" class="form-label">Personalized Discount (%)</label>
+              <div class="input-group input-group-sm">
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  id="discountPercentage" 
+                  name="discountPercentage" 
+                  min="0" 
+                  max="100" 
+                  step="0.5" 
+                  value="<%= customer.discountPercentage !== undefined ? customer.discountPercentage : 0 %>"
+                >
+                <span class="input-group-text">%</span>
+              </div>
+              <div class="form-text text-muted" style="font-size: 11px;">Applied during checkout sales bills.</div>
+            </div>
+
+            <!-- Opening Outstanding Balance (Create Mode Only) -->
+            <% if (!isEdit) { %>
+              <div class="col-12 col-md-6">
+                <label for="openingBalance" class="form-label">Opening Credit Dues (<%= currency %>)</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><%= currency %></span>
+                  <input 
+                    type="number" 
+                    class="form-control text-end" 
+                    id="openingBalance" 
+                    name="openingBalance" 
+                    min="0" 
+                    step="0.01" 
+                    value="0.00" 
+                    placeholder="0.00"
+                  >
+                </div>
+                <div class="form-text text-muted" style="font-size: 11px;">Existing unpaid ledger dues if transferring from manual ledger.</div>
+              </div>
+            <% } %>
+
+            <!-- Customer Notes -->
+            <div class="col-12">
+              <label for="notes" class="form-label">Customer Preferences &amp; Notes</label>
+              <textarea 
+                class="form-control form-control-sm" 
+                id="notes" 
+                name="notes" 
+                rows="3" 
+                placeholder="e.g. Prefers organic products, weekend home delivery, monthly consolidated billing..."
+              ><%= customer.notes || '' %></textarea>
+            </div>
+          </div>
+
+          <hr class="my-4 text-muted opacity-25">
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="/customers<%= isEdit ? `/${customer._id}` : '' %>" class="btn btn-sm btn-outline-secondary">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-sm btn-primary">
+              <i class="bi bi-check-circle me-1"></i> <%= isEdit ? 'Save Changes' : 'Create Customer Account' %>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Loyalty tier change updates recommended discount
+  document.getElementById('loyaltyLevel').addEventListener('change', function () {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption && selectedOption.dataset.discount !== undefined) {
+      const discountInput = document.getElementById('discountPercentage');
+      discountInput.value = selectedOption.dataset.discount;
+    }
+  });
+
+  // Bootstrap form validation
+  (function () {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
+
+<%- include('../partials/footer') %>

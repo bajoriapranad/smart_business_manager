@@ -1,0 +1,89 @@
+<aside class="app-sidebar">
+  <div class="sidebar-header">
+    <a href="/dashboard" class="brand-title">
+      <i class="bi bi-briefcase-fill text-primary"></i>
+      <span>Smart Business</span>
+    </a>
+  </div>
+
+  <div class="sidebar-nav">
+    <a href="/dashboard" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'dashboard') ? 'active' : '' %>">
+      <i class="bi bi-grid-1x2"></i>
+      <span>Dashboard</span>
+    </a>
+
+    <div class="nav-section-title">Core Operations</div>
+
+    <a href="/inventory" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'inventory') ? 'active' : '' %>">
+      <i class="bi bi-box-seam"></i>
+      <span>Inventory</span>
+    </a>
+
+    <a href="/sales" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'sales') ? 'active' : '' %>">
+      <i class="bi bi-receipt"></i>
+      <span>Sales & Checkout</span>
+    </a>
+
+    <a href="/purchases" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'purchases') ? 'active' : '' %>">
+      <i class="bi bi-cart-check"></i>
+      <span>Purchases</span>
+    </a>
+
+    <div class="nav-section-title">People & Partners</div>
+
+    <a href="/customers" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'customers') ? 'active' : '' %>">
+      <i class="bi bi-people"></i>
+      <span>Customers</span>
+    </a>
+
+    <a href="/suppliers" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'suppliers') ? 'active' : '' %>">
+      <i class="bi bi-truck"></i>
+      <span>Suppliers</span>
+    </a>
+
+    <a href="/staff" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'staff') ? 'active' : '' %>">
+      <i class="bi bi-person-badge"></i>
+      <span>Staff & Payroll</span>
+    </a>
+
+    <div class="nav-section-title">Finance & Dues</div>
+
+    <a href="/expenses" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'expenses') ? 'active' : '' %>">
+      <i class="bi bi-wallet2"></i>
+      <span>Expenses</span>
+    </a>
+
+    <a href="/electricity" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'electricity') ? 'active' : '' %>">
+      <i class="bi bi-lightning-charge"></i>
+      <span>Electricity Bills</span>
+    </a>
+
+    <a href="/payments" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'payments') ? 'active' : '' %>">
+      <i class="bi bi-bell"></i>
+      <span>Payments & Reminders</span>
+    </a>
+
+    <div class="nav-section-title">Intelligence & Growth</div>
+
+    <a href="/profit" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'profit') ? 'active' : '' %>">
+      <i class="bi bi-graph-up-arrow"></i>
+      <span>Profit Analyser</span>
+    </a>
+
+    <a href="/analytics" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'analytics') ? 'active' : '' %>">
+      <i class="bi bi-pie-chart"></i>
+      <span>Analytics</span>
+    </a>
+
+    <a href="/reports" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'reports') ? 'active' : '' %>">
+      <i class="bi bi-file-earmark-text"></i>
+      <span>Reports</span>
+    </a>
+
+    <a href="/settings" class="sidebar-link <%= (typeof activeMenu !== 'undefined' && activeMenu === 'settings') ? 'active' : '' %>">
+      <i class="bi bi-gear"></i>
+      <span>Settings</span>
+    </a>
+  </div>
+</aside>
+<div class="sidebar-backdrop"></div>

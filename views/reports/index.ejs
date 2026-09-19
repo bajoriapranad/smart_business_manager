@@ -1,0 +1,163 @@
+<%- include('../partials/header') %>
+
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="page-title"><i class="bi bi-file-earmark-bar-graph text-primary me-2"></i>Reports &amp; Export Engine</h1>
+    <p class="page-subtitle">Download audit-ready CSV spreadsheets, review ledger registers, and generate printable statements</p>
+  </div>
+</div>
+
+<!-- Report Domains Grid -->
+<div class="row g-4">
+  <!-- 1. Sales Register -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm rounded-3">
+      <div class="card-body p-4 d-flex flex-column">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="rounded-3 p-3 bg-primary-subtle text-primary">
+            <i class="bi bi-receipt-cutoff fs-3"></i>
+          </div>
+          <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 rounded-pill">
+            <%= counts.sales %> Invoices
+          </span>
+        </div>
+        <h4 class="card-title fw-bold mb-2">Sales Register</h4>
+        <p class="text-muted small mb-4 flex-grow-1">
+          Detailed sales invoices breakdown including item counts, customer details, discounts, COGS, and gross margin per order.
+        </p>
+        <div class="d-grid gap-2">
+          <a href="/reports/sales" class="btn btn-outline-primary">
+            <i class="bi bi-eye me-1"></i> View Register
+          </a>
+          <div class="btn-group">
+            <a href="/reports/sales?format=csv&timeframe=this_month" class="btn btn-success">
+              <i class="bi bi-file-earmark-excel me-1"></i> Download CSV
+            </a>
+            <a href="/reports/print?type=sales&timeframe=this_month" target="_blank" class="btn btn-outline-secondary">
+              <i class="bi bi-printer me-1"></i> Print
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Inventory Valuation -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm rounded-3">
+      <div class="card-body p-4 d-flex flex-column">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="rounded-3 p-3 bg-info-subtle text-info">
+            <i class="bi bi-boxes fs-3"></i>
+          </div>
+          <span class="badge bg-info-subtle text-info fs-6 px-3 py-2 rounded-pill">
+            <%= counts.inventory %> SKUs
+          </span>
+        </div>
+        <h4 class="card-title fw-bold mb-2">Inventory Valuation</h4>
+        <p class="text-muted small mb-4 flex-grow-1">
+          Comprehensive stock audit with cost asset value, retail sales projection, margin ratios, and replenishment flags.
+        </p>
+        <div class="d-grid gap-2">
+          <a href="/reports/inventory" class="btn btn-outline-info">
+            <i class="bi bi-eye me-1"></i> View Audit
+          </a>
+          <div class="btn-group">
+            <a href="/reports/inventory?format=csv" class="btn btn-success">
+              <i class="bi bi-file-earmark-excel me-1"></i> Download CSV
+            </a>
+            <a href="/reports/print?type=inventory" target="_blank" class="btn btn-outline-secondary">
+              <i class="bi bi-printer me-1"></i> Print
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Customer Receivables & Credit Ledger -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm rounded-3">
+      <div class="card-body p-4 d-flex flex-column">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="rounded-3 p-3 bg-warning-subtle text-warning">
+            <i class="bi bi-people-fill fs-3"></i>
+          </div>
+          <span class="badge bg-warning-subtle text-warning fs-6 px-3 py-2 rounded-pill">
+            <%= counts.customers %> Profiles
+          </span>
+        </div>
+        <h4 class="card-title fw-bold mb-2">Customer Receivables</h4>
+        <p class="text-muted small mb-4 flex-grow-1">
+          Customer balance sheet, outstanding credit balances (Udhar), loyalty tiers, and lifetime procurement metrics.
+        </p>
+        <div class="d-grid gap-2">
+          <a href="/reports/customers" class="btn btn-outline-warning">
+            <i class="bi bi-eye me-1"></i> View Ledger
+          </a>
+          <a href="/reports/customers?format=csv" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Download CSV
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Supplier Purchases & Payables -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm rounded-3">
+      <div class="card-body p-4 d-flex flex-column">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="rounded-3 p-3 bg-secondary-subtle text-secondary">
+            <i class="bi bi-truck-front-fill fs-3"></i>
+          </div>
+          <span class="badge bg-secondary-subtle text-secondary fs-6 px-3 py-2 rounded-pill">
+            <%= counts.purchases %> Orders
+          </span>
+        </div>
+        <h4 class="card-title fw-bold mb-2">Supplier Purchases</h4>
+        <p class="text-muted small mb-4 flex-grow-1">
+          Procurement invoices, supplier balances payable, settlement progress, and inward batch logs.
+        </p>
+        <div class="d-grid gap-2">
+          <a href="/reports/purchases" class="btn btn-outline-secondary">
+            <i class="bi bi-eye me-1"></i> View Purchases
+          </a>
+          <a href="/reports/purchases?format=csv&timeframe=this_month" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Download CSV
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Operating Expenses & Tax Audit -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm rounded-3">
+      <div class="card-body p-4 d-flex flex-column">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="rounded-3 p-3 bg-danger-subtle text-danger">
+            <i class="bi bi-cash-coin fs-3"></i>
+          </div>
+          <span class="badge bg-danger-subtle text-danger fs-6 px-3 py-2 rounded-pill">
+            <%= counts.expenses %> Entries
+          </span>
+        </div>
+        <h4 class="card-title fw-bold mb-2">Operating Expenses</h4>
+        <p class="text-muted small mb-4 flex-grow-1">
+          Complete overhead disbursement log by category (Rent, Utilities, Staff, Repairs) for tax and accounting filing.
+        </p>
+        <div class="d-grid gap-2">
+          <a href="/reports/expenses" class="btn btn-outline-danger">
+            <i class="bi bi-eye me-1"></i> View Expenses
+          </a>
+          <a href="/reports/expenses?format=csv&timeframe=this_month" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i> Download CSV
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,314 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">
+      <%= customer.name %>
+      <% if (customer.loyaltyLevel === 'VIP') { %>
+        <span class="badge bg-warning text-dark border border-warning fs-6 ms-2">
+          <i class="bi bi-star-fill text-dark me-1"></i> VIP Member
+        </span>
+      <% } else if (customer.loyaltyLevel === 'Frequent') { %>
+        <span class="badge bg-info text-dark border border-info fs-6 ms-2">
+          <i class="bi bi-gem me-1"></i> Frequent Shopper
+        </span>
+      <% } else if (customer.loyaltyLevel === 'Regular') { %>
+        <span class="badge bg-primary fs-6 ms-2">Regular</span>
+      <% } else { %>
+        <span class="badge bg-light text-muted border fs-6 ms-2">Standard</span>
+      <% } %>
+    </h1>
+    <p class="page-subtitle">Registered on <%= new Date(customer.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) %></p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/customers" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Directory
+    </a>
+    <% if (customer.outstandingBalance > 0) { %>
+      <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#recordCustomerPaymentModal">
+        <i class="bi bi-cash-coin me-1"></i> Settle Dues (<%= currency %><%= customer.outstandingBalance.toFixed(2) %>)
+      </button>
+    <% } %>
+    <a href="/customers/<%= customer._id %>/edit" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-pencil me-1"></i> Edit Profile
+    </a>
+    <button 
+      type="button" 
+      class="btn btn-sm btn-outline-danger" 
+      onclick="confirmDeleteCustomer('<%= customer._id %>', '<%= customer.name %>', <%= customer.outstandingBalance %>)"
+    >
+      <i class="bi bi-trash me-1"></i> Delete
+    </button>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: Customer Profile & Financial Balance -->
+  <div class="col-12 col-lg-5">
+    <!-- Profile Card -->
+    <div class="card-business mb-4">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-person-lines-fill me-1 text-primary"></i> Account Details
+        </span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-business mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted" style="width: 40%;">Phone Number</td>
+              <td>
+                <a href="tel:<%= customer.phone %>" class="text-dark fw-bold text-decoration-none">
+                  <i class="bi bi-telephone text-primary me-1"></i> <%= customer.phone %>
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Email</td>
+              <td><%= customer.email || '—' %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Address</td>
+              <td><%= customer.address || '—' %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Loyalty Tier</td>
+              <td>
+                <span class="badge bg-light text-dark border"><%= customer.loyaltyLevel %></span>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Sales Discount</td>
+              <td>
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">
+                  <%= customer.discountPercentage %>% Off
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted">Notes / Memo</td>
+              <td class="small"><%= customer.notes || '—' %></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Financial Account Ledger Summary -->
+    <div class="card-business">
+      <div class="card-header bg-light">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-wallet2 me-1 text-success"></i> Financial Balance &amp; Ledger
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="p-3 bg-light rounded-2 border mb-3">
+          <span class="text-muted small d-block mb-1">Lifetime Gross Purchases</span>
+          <h3 class="fw-bold text-dark mb-0">
+            <%= currency %><%= customer.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+          </h3>
+        </div>
+
+        <div class="p-3 rounded-2 border <%= customer.outstandingBalance > 0 ? 'bg-danger-subtle border-danger-subtle' : 'bg-success-subtle border-success-subtle' %>">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small <%= customer.outstandingBalance > 0 ? 'text-danger' : 'text-success' %> fw-semibold">
+              Outstanding Credit Balance:
+            </span>
+            <span class="badge <%= customer.outstandingBalance > 0 ? 'bg-danger' : 'bg-success' %> text-white">
+              <%= customer.outstandingBalance > 0 ? 'Payment Due' : 'All Clear' %>
+            </span>
+          </div>
+          <h3 class="fw-bold <%= customer.outstandingBalance > 0 ? 'text-danger' : 'text-success' %> mb-2">
+            <%= currency %><%= customer.outstandingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+          </h3>
+          <% if (customer.outstandingBalance > 0) { %>
+            <button 
+              type="button" 
+              class="btn btn-sm btn-danger w-100 mt-2" 
+              data-bs-toggle="modal" 
+              data-bs-target="#recordCustomerPaymentModal"
+            >
+              <i class="bi bi-check2-circle me-1"></i> Settle Outstanding Dues
+            </button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Sales Invoices History -->
+  <div class="col-12 col-lg-7">
+    <div class="card-business">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-receipt me-1 text-primary"></i> Customer Purchase History
+        </span>
+        <span class="badge bg-light text-muted border"><%= sales ? sales.length : 0 %> Orders</span>
+      </div>
+      <div class="card-body p-0">
+        <% if (sales && sales.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-business table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Date</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% sales.forEach(s => { %>
+                  <tr>
+                    <td class="fw-medium text-dark"><%= s.invoiceNumber %></td>
+                    <td class="text-muted" style="font-size: 11px;">
+                      <%= new Date(s.saleDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border"><%= s.items ? s.items.length : 0 %> items</span>
+                    </td>
+                    <td class="fw-bold text-dark">
+                      <%= currency %><%= s.finalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border" style="font-size: 10px;"><%= s.paymentMethod %></span>
+                    </td>
+                    <td>
+                      <% if (s.paymentStatus === 'Paid') { %>
+                        <span class="badge-status status-paid">Paid</span>
+                      <% } else if (s.paymentStatus === 'Partially Paid') { %>
+                        <span class="badge-status status-warning">Partial</span>
+                      <% } else { %>
+                        <span class="badge-status status-pending">Due</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="p-5 text-center text-muted small">
+            <i class="bi bi-receipt-cutoff fs-2 d-block mb-2 text-secondary"></i>
+            No sales transactions recorded for this customer yet.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Record Payment -->
+<div class="modal fade" id="recordCustomerPaymentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/customers/<%= customer._id %>/payments" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-dark">
+            <i class="bi bi-cash-stack me-2 text-success"></i> Settle Customer Credit Dues
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 bg-light rounded-2 border mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Customer Name:</span>
+              <span class="fw-bold text-dark"><%= customer.name %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Phone:</span>
+              <span class="fw-semibold text-dark"><%= customer.phone %></span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Current Outstanding Due:</span>
+              <span class="fw-bold text-danger"><%= currency %><%= customer.outstandingBalance.toFixed(2) %></span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="paymentAmount" class="form-label fw-semibold text-dark required-field">Payment Received Amount</label>
+            <div class="input-group">
+              <span class="input-group-text"><%= currency %></span>
+              <input 
+                type="number" 
+                class="form-control form-control-lg text-end fw-bold text-success" 
+                id="paymentAmount" 
+                name="paymentAmount" 
+                min="0.01" 
+                max="<%= customer.outstandingBalance %>" 
+                step="0.01" 
+                value="<%= customer.outstandingBalance.toFixed(2) %>" 
+                required
+              >
+            </div>
+            <div class="form-text text-muted">Amount cannot exceed current outstanding credit balance.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-success">
+            <i class="bi bi-check-circle me-1"></i> Confirm Payment Received
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Customer Deletion Confirmation -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i> Delete Customer Account
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-2">Are you sure you want to delete customer <strong id="deleteCustomerName" class="text-dark"></strong>?</p>
+        <div id="deleteWarningDue" class="alert alert-danger py-2 small mb-0 d-none">
+          <i class="bi bi-x-circle me-1"></i> This customer has an active outstanding balance. Settle dues before deleting.
+        </div>
+        <div id="deleteNormalWarning" class="alert alert-warning py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i> Customers with existing transaction records cannot be deleted to preserve accounting ledger integrity.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteCustomerForm" method="POST" action="">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="btn btn-sm btn-danger" id="deleteConfirmBtn">Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function confirmDeleteCustomer(id, name, dueAmount) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteCustomerModal'));
+    document.getElementById('deleteCustomerName').textContent = name;
+    document.getElementById('deleteCustomerForm').action = '/customers/' + id + '?_method=DELETE';
+    
+    const warningDue = document.getElementById('deleteWarningDue');
+    const warningNormal = document.getElementById('deleteNormalWarning');
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+
+    if (dueAmount > 0) {
+      warningDue.classList.remove('d-none');
+      warningNormal.classList.add('d-none');
+      confirmBtn.disabled = true;
+    } else {
+      warningDue.classList.add('d-none');
+      warningNormal.classList.remove('d-none');
+      confirmBtn.disabled = false;
+    }
+
+    modal.show();
+  }
+</script>
+
+<%- include('../partials/footer') %>

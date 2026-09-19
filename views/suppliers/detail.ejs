@@ -1,0 +1,204 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <h1 class="page-title"><%= supplier.name %></h1>
+      <% if (supplier.amountDue > 0) { %>
+        <span class="badge-status status-overdue">Payment Due</span>
+      <% } else { %>
+        <span class="badge-status status-paid">Account Clear</span>
+      <% } %>
+    </div>
+    <p class="page-subtitle text-muted">
+      <%= supplier.company ? supplier.company + ' &bull; ' : '' %>
+      <i class="bi bi-telephone me-1"></i><%= supplier.phone %> 
+      <% if (supplier.email) { %> &bull; <i class="bi bi-envelope me-1"></i><%= supplier.email %><% } %>
+    </p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <a href="/suppliers" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Suppliers
+    </a>
+    <a href="/suppliers/<%= supplier._id %>/edit" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-pencil me-1"></i> Edit Vendor
+    </a>
+    <a href="/purchases" class="btn btn-sm btn-primary">
+      <i class="bi bi-cart-plus me-1"></i> New Purchase Order
+    </a>
+  </div>
+</div>
+
+<!-- Ledger Balance Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-4">
+    <div class="stat-card">
+      <span class="stat-label">Total Purchases</span>
+      <div class="stat-value text-dark"><%= currency %><%= supplier.totalPurchases.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted"><%= purchases ? purchases.length : 0 %> recorded invoice<%= (purchases && purchases.length === 1) ? '' : 's' %></div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-4">
+    <div class="stat-card">
+      <span class="stat-label">Amount Paid</span>
+      <div class="stat-value text-success"><%= currency %><%= supplier.amountPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">Total settled payments</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-4">
+    <div class="stat-card">
+      <span class="stat-label">Outstanding Balance (Due)</span>
+      <div class="stat-value <%= supplier.amountDue > 0 ? 'text-danger' : 'text-dark' %>">
+        <%= currency %><%= supplier.amountDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext <%= supplier.amountDue > 0 ? 'text-danger fw-medium' : 'text-muted' %>">
+        <%= supplier.amountDue > 0 ? 'Credit payment pending' : 'Zero balance' %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Vendor Profile & Terms -->
+  <div class="col-12 col-lg-5">
+    <div class="card-business mb-3">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-building me-1 text-primary"></i> Vendor Profile &amp; Terms
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-business mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted" style="width: 40%;">Company Name</td>
+              <td class="fw-semibold text-dark"><%= supplier.company || '—' %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Primary Contact</td>
+              <td class="fw-semibold text-dark"><%= supplier.name %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Phone Number</td>
+              <td><i class="bi bi-telephone me-1 text-muted"></i><%= supplier.phone %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Email Address</td>
+              <td><%= supplier.email || '—' %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">GST Number</td>
+              <td class="fw-mono text-dark"><%= supplier.gstNumber || '—' %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Payment Terms</td>
+              <td><span class="badge bg-light text-dark border"><%= supplier.paymentTerms %></span></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Depot / Address</td>
+              <td><%= supplier.address || '—' %></td>
+            </tr>
+            <tr>
+              <td class="text-muted">Notes</td>
+              <td><%= supplier.notes || '—' %></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Products Supplied by this Vendor -->
+    <div class="card-business">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+          <i class="bi bi-box-seam me-1 text-secondary"></i> Supplied Products (<%= products ? products.length : 0 %>)
+        </span>
+      </div>
+      <div class="card-body p-0">
+        <% if (products && products.length > 0) { %>
+          <div class="list-group list-group-flush">
+            <% products.forEach(p => { %>
+              <div class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+                <div>
+                  <a href="/inventory/<%= p._id %>" class="fw-medium text-dark text-decoration-none hover-primary">
+                    <%= p.name %>
+                  </a>
+                  <div class="text-muted" style="font-size: 11px;">SKU: <%= p.sku %> &bull; Cost: <%= currency %><%= p.purchasePrice.toFixed(2) %></div>
+                </div>
+                <div class="text-end">
+                  <span class="fw-bold <%= p.currentStock <= p.minimumStock ? 'text-danger' : 'text-dark' %>"><%= p.currentStock %></span>
+                  <small class="text-muted"><%= p.unit %></small>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="p-3 text-center text-muted small">
+            No products currently linked to this supplier.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Purchase Invoices History -->
+  <div class="col-12 col-lg-7">
+    <div class="card-business">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+          <i class="bi bi-receipt me-1 text-primary"></i> Purchase History &amp; Invoices
+        </span>
+        <a href="/purchases/new?supplierId=<%= supplier._id %>" class="btn btn-xs btn-outline-primary">
+          <i class="bi bi-cart-plus me-1"></i> New Purchase
+        </a>
+      </div>
+      <div class="card-body p-0">
+        <% if (purchases && purchases.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-business table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Date</th>
+                  <th>Total</th>
+                  <th>Paid</th>
+                  <th>Remaining</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% purchases.forEach(pur => { %>
+                  <tr>
+                    <td class="fw-medium">
+                      <a href="/purchases/<%= pur._id %>" class="text-primary text-decoration-none">
+                        <%= pur.invoiceNumber %>
+                      </a>
+                    </td>
+                    <td class="text-muted" style="font-size: 11px;"><%= new Date(pur.purchaseDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) %></td>
+                    <td class="fw-bold text-dark"><%= currency %><%= pur.totalAmount.toFixed(2) %></td>
+                    <td class="text-success"><%= currency %><%= pur.paidAmount.toFixed(2) %></td>
+                    <td class="<%= pur.remainingAmount > 0 ? 'text-danger fw-semibold' : 'text-muted' %>">
+                      <%= currency %><%= pur.remainingAmount.toFixed(2) %>
+                    </td>
+                    <td>
+                      <% if (pur.paymentStatus === 'Paid') { %>
+                        <span class="badge-status status-paid">Paid</span>
+                      <% } else { %>
+                        <span class="badge-status status-pending"><%= pur.paymentStatus %></span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="p-4 text-center text-muted small">
+            <i class="bi bi-cart-x fs-3 d-block mb-2 text-secondary"></i>
+            No purchase records found for this vendor.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

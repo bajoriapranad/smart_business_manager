@@ -1,0 +1,244 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Purchase Invoices &amp; Inward Stock</h1>
+    <p class="page-subtitle">Manage wholesale purchases, receive inventory, log stock movements, and monitor supplier dues</p>
+  </div>
+  <div>
+    <a href="/purchases/new" class="btn btn-sm btn-primary">
+      <i class="bi bi-cart-plus me-1"></i> New Purchase Invoice
+    </a>
+  </div>
+</div>
+
+<!-- Purchases KPI Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Invoices</span>
+      <div class="stat-value text-dark"><%= summary.totalInvoices %></div>
+      <div class="stat-subtext text-muted">Stock inward bills recorded</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Purchases</span>
+      <div class="stat-value text-primary"><%= currency %><%= summary.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">Gross inventory procurement</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Amount Paid</span>
+      <div class="stat-value text-success"><%= currency %><%= summary.totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></div>
+      <div class="stat-subtext text-muted">Settled supplier payments</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Outstanding Dues</span>
+      <div class="stat-value <%= summary.totalDue > 0 ? 'text-danger' : 'text-dark' %>">
+        <%= currency %><%= summary.totalDue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext <%= summary.totalDue > 0 ? 'text-danger fw-medium' : 'text-muted' %>">
+        <%= summary.totalDue > 0 ? 'Pending invoice payments' : 'All accounts settled' %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card-business mb-3 p-3">
+  <form action="/purchases" method="GET" class="row g-2 align-items-center">
+    <div class="col-12 col-md-4">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+        <input 
+          type="text" 
+          name="search" 
+          class="form-control border-start-0 ps-0" 
+          placeholder="Search by invoice number..." 
+          value="<%= filters.search %>"
+        >
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <select name="supplier" class="form-select form-select-sm">
+        <option value="">All Suppliers</option>
+        <% suppliers.forEach(sup => { %>
+          <option value="<%= sup._id %>" <%= filters.supplier === sup._id.toString() ? 'selected' : '' %>>
+            <%= sup.name %> <%= sup.company ? `(${sup.company})` : '' %>
+          </option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <select name="status" class="form-select form-select-sm">
+        <option value="">All Statuses</option>
+        <option value="Paid" <%= filters.status === 'Paid' ? 'selected' : '' %>>Paid</option>
+        <option value="Partially Paid" <%= filters.status === 'Partially Paid' ? 'selected' : '' %>>Partially Paid</option>
+        <option value="Pending" <%= filters.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-1">
+      <button type="submit" class="btn btn-sm btn-secondary w-100">
+        Filter
+      </button>
+    </div>
+    <% if (filters.search || filters.supplier || filters.status) { %>
+      <div class="col-6 col-md-2">
+        <a href="/purchases" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-x-circle me-1"></i> Clear Filters
+        </a>
+      </div>
+    <% } %>
+  </form>
+</div>
+
+<!-- Purchases Invoices Table -->
+<div class="card-business">
+  <div class="card-body p-0">
+    <% if (purchases && purchases.length > 0) { %>
+      <div class="table-responsive">
+        <table class="table table-business table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Date</th>
+              <th>Supplier</th>
+              <th>Items</th>
+              <th>Total Amount</th>
+              <th>Paid</th>
+              <th>Remaining Due</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% purchases.forEach(pur => { %>
+              <tr>
+                <td class="fw-semibold">
+                  <a href="/purchases/<%= pur._id %>" class="text-primary text-decoration-none">
+                    <%= pur.invoiceNumber %>
+                  </a>
+                </td>
+                <td class="text-muted" style="font-size: 12px;">
+                  <%= new Date(pur.purchaseDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                </td>
+                <td>
+                  <% if (pur.supplier) { %>
+                    <a href="/suppliers/<%= pur.supplier._id %>" class="text-dark fw-medium text-decoration-none hover-primary">
+                      <%= pur.supplier.name %>
+                    </a>
+                    <% if (pur.supplier.company) { %>
+                      <div class="text-muted" style="font-size: 11px;"><%= pur.supplier.company %></div>
+                    <% } %>
+                  <% } else { %>
+                    <span class="text-muted italic">Supplier deleted</span>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">
+                    <%= pur.items.length %> <%= pur.items.length === 1 ? 'item' : 'items' %>
+                  </span>
+                  <% if (pur.items.length > 0 && pur.items[0].product) { %>
+                    <small class="text-muted d-block" style="font-size: 11px; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      <%= pur.items[0].product.name %> <%= pur.items.length > 1 ? `+${pur.items.length - 1} more` : '' %>
+                    </small>
+                  <% } %>
+                </td>
+                <td class="fw-bold text-dark">
+                  <%= currency %><%= pur.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+                <td class="text-success">
+                  <%= currency %><%= pur.paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+                <td class="<%= pur.remainingAmount > 0 ? 'text-danger fw-semibold' : 'text-muted' %>">
+                  <%= currency %><%= pur.remainingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </td>
+                <td>
+                  <% if (pur.paymentStatus === 'Paid') { %>
+                    <span class="badge-status status-paid">Paid</span>
+                  <% } else if (pur.paymentStatus === 'Partially Paid') { %>
+                    <span class="badge-status status-warning">Partial</span>
+                  <% } else { %>
+                    <span class="badge-status status-pending">Pending</span>
+                  <% } %>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <a href="/purchases/<%= pur._id %>" class="btn btn-outline-secondary" title="View Statement / Print">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <button 
+                      type="button" 
+                      class="btn btn-outline-danger" 
+                      title="Void / Delete Invoice"
+                      onclick="confirmDeletePurchase('<%= pur._id %>', '<%= pur.invoiceNumber %>')"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty-state py-5 text-center">
+        <i class="bi bi-cart-x fs-1 text-secondary mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark">No Purchase Invoices Found</h5>
+        <p class="text-muted small mb-4">
+          <% if (filters.search || filters.supplier || filters.status) { %>
+            No invoices matched your filter criteria. Try clearing search filters.
+          <% } else { %>
+            Record inbound purchases to restock items, update unit costs, and track vendor accounts payable.
+          <% } %>
+        </p>
+        <a href="/purchases/new" class="btn btn-sm btn-primary">
+          <i class="bi bi-cart-plus me-1"></i> Record First Purchase
+        </a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Modal for Void / Delete Confirmation -->
+<div class="modal fade" id="deletePurchaseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i> Void Purchase Invoice
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-2">Are you sure you want to void invoice <strong id="deleteInvoiceName" class="text-dark"></strong>?</p>
+        <div class="alert alert-warning py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i> Voiding this invoice will deduct the received quantities from product inventory and reverse supplier balance ledger records.
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deletePurchaseForm" method="POST" action="">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="btn btn-sm btn-danger">Void Invoice &amp; Revert Stock</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function confirmDeletePurchase(id, invoiceNumber) {
+    const modal = new bootstrap.Modal(document.getElementById('deletePurchaseModal'));
+    document.getElementById('deleteInvoiceName').textContent = '#' + invoiceNumber;
+    document.getElementById('deletePurchaseForm').action = '/purchases/' + id + '?_method=DELETE';
+    modal.show();
+  }
+</script>
+
+<%- include('../partials/footer') %>

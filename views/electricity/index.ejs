@@ -1,0 +1,277 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Electricity &amp; Utility Tracking</h1>
+    <p class="page-subtitle">Track commercial meter readings, energy consumption (kWh), tariff efficiency, and utility bills</p>
+  </div>
+  <div>
+    <a href="/electricity/new" class="btn btn-sm btn-primary">
+      <i class="bi bi-lightning-charge me-1"></i> Record New Bill
+    </a>
+  </div>
+</div>
+
+<!-- KPI Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Electricity Cost</span>
+      <div class="stat-value text-dark">
+        <%= currency %><%= kpis.totalBilled.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted"><%= kpis.totalCount %> utility bills recorded</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total Power Consumed</span>
+      <div class="stat-value text-primary">
+        <%= kpis.totalUnits.toLocaleString('en-IN') %> <span class="fs-6 fw-normal text-muted">kWh</span>
+      </div>
+      <div class="stat-subtext text-muted">Cumulative units consumed</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Pending &amp; Overdue</span>
+      <div class="stat-value <%= kpis.pendingAmount > 0 ? 'text-danger' : 'text-dark' %>">
+        <%= currency %><%= kpis.pendingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext <%= kpis.overdueCount > 0 ? 'text-danger fw-semibold' : 'text-muted' %>">
+        <% if (kpis.overdueCount > 0) { %>
+          <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i><%= kpis.overdueCount %> Overdue Bill<%= kpis.overdueCount > 1 ? 's' : '' %>
+        <% } else { %>
+          Outstanding utility dues
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Average Unit Tariff</span>
+      <div class="stat-value text-success">
+        <%= currency %><%= kpis.avgCostPerUnit %> <span class="fs-6 fw-normal text-muted">/ unit</span>
+      </div>
+      <div class="stat-subtext text-muted">Weighted effective tariff</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card-business mb-3 p-3">
+  <form action="/electricity" method="GET" class="row g-2 align-items-center">
+    <div class="col-12 col-md-4">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+        <input 
+          type="text" 
+          name="search" 
+          class="form-control border-start-0 ps-0" 
+          placeholder="Search meter number or notes..." 
+          value="<%= filters.search %>"
+        >
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <input 
+        type="text" 
+        name="billingMonth" 
+        class="form-control form-control-sm" 
+        placeholder="Billing Month (e.g. 2026-08)" 
+        value="<%= filters.billingMonth %>"
+      >
+    </div>
+
+    <div class="col-6 col-md-3">
+      <select name="paymentStatus" class="form-select form-select-sm">
+        <option value="">All Payment Statuses</option>
+        <option value="Paid" <%= filters.paymentStatus === 'Paid' ? 'selected' : '' %>>Paid</option>
+        <option value="Pending" <%= filters.paymentStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
+        <option value="Overdue" <%= filters.paymentStatus === 'Overdue' ? 'selected' : '' %>>Overdue</option>
+      </select>
+    </div>
+
+    <div class="col-12 col-md-2 d-flex gap-1">
+      <button type="submit" class="btn btn-sm btn-dark w-100" title="Apply Filters">Filter</button>
+      <% if (filters.search || filters.billingMonth || filters.paymentStatus) { %>
+        <a href="/electricity" class="btn btn-sm btn-outline-secondary" title="Reset Filters"><i class="bi bi-x-lg"></i></a>
+      <% } %>
+    </div>
+  </form>
+</div>
+
+<!-- Electricity Bills Ledger Table -->
+<div class="card-business p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-3">Billing Month</th>
+          <th>Meter Number</th>
+          <th>Reading (Prev &rarr; Current)</th>
+          <th class="text-center">Units (kWh)</th>
+          <th class="text-end">Effective Rate</th>
+          <th class="text-end">Bill Amount</th>
+          <th>Due Date</th>
+          <th class="text-center">Status</th>
+          <th class="text-end pe-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (bills && bills.length > 0) { %>
+          <% bills.forEach(bill => { %>
+            <tr>
+              <td class="ps-3">
+                <div class="fw-semibold text-dark">
+                  <i class="bi bi-calendar-event me-1 text-primary"></i> <%= bill.billingMonth %>
+                </div>
+                <% if (bill.notes) { %>
+                  <div class="text-muted text-xs text-truncate" style="max-width: 180px;"><%= bill.notes %></div>
+                <% } %>
+              </td>
+
+              <td>
+                <span class="badge bg-light text-dark border">
+                  <i class="bi bi-speedometer2 me-1 text-secondary"></i><%= bill.meterNumber %>
+                </span>
+              </td>
+
+              <td>
+                <div class="text-xs">
+                  <span class="text-muted"><%= bill.previousReading.toLocaleString('en-IN') %></span>
+                  <i class="bi bi-arrow-right mx-1 text-secondary"></i>
+                  <span class="fw-bold text-dark"><%= bill.currentReading.toLocaleString('en-IN') %></span>
+                </div>
+              </td>
+
+              <td class="text-center">
+                <span class="fw-bold text-dark"><%= bill.unitsConsumed.toLocaleString('en-IN') %></span>
+                <span class="text-xs text-muted">units</span>
+                <% if (bill.diffPercent !== null) { %>
+                  <div>
+                    <% if (parseFloat(bill.diffPercent) > 0) { %>
+                      <span class="badge bg-danger-subtle text-danger text-xs" title="Increase compared to previous bill">
+                        <i class="bi bi-arrow-up-short"></i>+<%= bill.diffPercent %>%
+                      </span>
+                    <% } else if (parseFloat(bill.diffPercent) < 0) { %>
+                      <span class="badge bg-success-subtle text-success text-xs" title="Decrease compared to previous bill">
+                        <i class="bi bi-arrow-down-short"></i><%= bill.diffPercent %>%
+                      </span>
+                    <% } else { %>
+                      <span class="badge bg-light text-muted text-xs">&plusmn;0%</span>
+                    <% } %>
+                  </div>
+                <% } %>
+              </td>
+
+              <td class="text-end text-xs text-muted">
+                <%= currency %><%= bill.costPerUnit %> / unit
+              </td>
+
+              <td class="text-end fw-bold text-dark">
+                <%= currency %><%= bill.billAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+              </td>
+
+              <td>
+                <div class="text-xs <%= bill.paymentStatus === 'Overdue' ? 'text-danger fw-semibold' : 'text-dark' %>">
+                  <%= new Date(bill.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                </div>
+                <% if (bill.paidDate) { %>
+                  <div class="text-xs text-success">
+                    Paid: <%= new Date(bill.paidDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) %>
+                  </div>
+                <% } %>
+              </td>
+
+              <td class="text-center">
+                <% if (bill.paymentStatus === 'Paid') { %>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="bi bi-check-circle-fill me-1"></i>Paid
+                  </span>
+                <% } else if (bill.paymentStatus === 'Overdue') { %>
+                  <span class="badge bg-danger text-white">
+                    <i class="bi bi-exclamation-octagon-fill me-1"></i>Overdue
+                  </span>
+                <% } else { %>
+                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                    <i class="bi bi-clock me-1"></i>Pending
+                  </span>
+                <% } %>
+              </td>
+
+              <td class="text-end pe-3">
+                <div class="d-flex justify-content-end gap-1">
+                  <% if (bill.paymentStatus !== 'Paid') { %>
+                    <form action="/electricity/<%= bill._id %>/pay" method="POST" class="d-inline m-0">
+                      <button type="submit" class="btn btn-xs btn-outline-success" title="Mark Bill as Paid">
+                        <i class="bi bi-check-lg"></i> Pay
+                      </button>
+                    </form>
+                  <% } %>
+
+                  <a href="/electricity/<%= bill._id %>/edit" class="btn btn-xs btn-outline-secondary" title="Edit Bill">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+
+                  <button 
+                    type="button" 
+                    class="btn btn-xs btn-outline-danger" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deleteModal<%= bill._id %>" 
+                    title="Delete Bill"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div class="modal fade" id="deleteModal<%= bill._id %>" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content">
+                      <div class="modal-header py-2">
+                        <h6 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Delete Bill</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body text-start">
+                        <p class="mb-2">Are you sure you want to delete this electricity bill record?</p>
+                        <div class="p-2 bg-light rounded text-xs">
+                          <strong><%= bill.billingMonth %></strong> (Meter: <%= bill.meterNumber %>)<br>
+                          <%= bill.unitsConsumed %> units &bull; <%= currency %><%= bill.billAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                        </div>
+                        <p class="text-xs text-muted mt-2 mb-0">Any synchronized Operating Expense will be automatically removed.</p>
+                      </div>
+                      <div class="modal-footer py-1">
+                        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <form action="/electricity/<%= bill._id %>?_method=DELETE" method="POST" class="m-0">
+                          <button type="submit" class="btn btn-sm btn-danger">Confirm Delete</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="9" class="text-center py-5 text-muted">
+              <i class="bi bi-lightning-charge fs-1 text-secondary opacity-50 mb-2 d-block"></i>
+              <h6>No electricity bills recorded yet</h6>
+              <p class="text-xs mb-3">Record commercial meter readings to track energy consumption, tariffs, and utility dues.</p>
+              <a href="/electricity/new" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Record First Bill
+              </a>
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

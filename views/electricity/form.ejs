@@ -1,0 +1,250 @@
+<%- include('../partials/header') %>
+
+<% const isEdit = !!bill; %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title"><%= isEdit ? `Edit Electricity Bill: ${bill.billingMonth}` : 'Record Electricity Bill' %></h1>
+    <p class="page-subtitle"><%= isEdit ? 'Update meter readings, bill amount, or settlement status' : 'Enter commercial meter readings and utility bill amounts' %></p>
+  </div>
+  <div>
+    <a href="/electricity" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to Bills
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="card-business">
+      <div class="card-header">
+        <span class="fw-semibold text-dark">
+          <i class="bi bi-speedometer2 me-1 text-primary"></i> <%= isEdit ? 'Bill & Reading Details' : 'New Utility Bill Entry' %>
+        </span>
+      </div>
+
+      <div class="card-body">
+        <form 
+          action="<%= isEdit ? `/electricity/${bill._id}?_method=PUT` : '/electricity' %>" 
+          method="POST" 
+          class="needs-validation" 
+          novalidate
+        >
+          <div class="row g-3">
+            <!-- Meter Number -->
+            <div class="col-12 col-md-6">
+              <label for="meterNumber" class="form-label required-field">Meter Number / Account ID</label>
+              <input 
+                type="text" 
+                class="form-control form-control-sm" 
+                id="meterNumber" 
+                name="meterNumber" 
+                value="<%= bill ? bill.meterNumber : (typeof prefillMeter !== 'undefined' ? prefillMeter : '') %>" 
+                required 
+                placeholder="e.g. MTR-4091823"
+              >
+              <div class="invalid-feedback">Meter number is required.</div>
+            </div>
+
+            <!-- Billing Month -->
+            <div class="col-12 col-md-6">
+              <label for="billingMonth" class="form-label required-field">Billing Month (YYYY-MM)</label>
+              <input 
+                type="month" 
+                class="form-control form-control-sm" 
+                id="billingMonth" 
+                name="billingMonth" 
+                value="<%= bill ? bill.billingMonth : (typeof defaultBillingMonth !== 'undefined' ? defaultBillingMonth : '') %>" 
+                required
+              >
+              <div class="invalid-feedback">Billing month is required.</div>
+            </div>
+
+            <!-- Previous Reading -->
+            <div class="col-12 col-md-6">
+              <label for="previousReading" class="form-label required-field">Previous Meter Reading (kWh)</label>
+              <input 
+                type="number" 
+                step="0.01" 
+                min="0" 
+                class="form-control form-control-sm" 
+                id="previousReading" 
+                name="previousReading" 
+                value="<%= bill ? bill.previousReading : (typeof prefillPreviousReading !== 'undefined' ? prefillPreviousReading : 0) %>" 
+                required 
+                placeholder="0"
+              >
+              <div class="invalid-feedback">Valid previous reading is required.</div>
+            </div>
+
+            <!-- Current Reading -->
+            <div class="col-12 col-md-6">
+              <label for="currentReading" class="form-label required-field">Current Meter Reading (kWh)</label>
+              <input 
+                type="number" 
+                step="0.01" 
+                min="0" 
+                class="form-control form-control-sm" 
+                id="currentReading" 
+                name="currentReading" 
+                value="<%= bill ? bill.currentReading : '' %>" 
+                required 
+                placeholder="0"
+              >
+              <div class="invalid-feedback">Current reading must be equal to or higher than previous reading.</div>
+            </div>
+
+            <!-- Real-Time Calculation Alert Banner -->
+            <div class="col-12">
+              <div class="p-3 bg-light rounded border d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                  <span class="text-xs text-uppercase text-muted fw-semibold d-block">Computed Energy Consumption</span>
+                  <span class="fs-5 fw-bold text-dark" id="calcUnits">
+                    <%= bill ? bill.unitsConsumed : 0 %>
+                  </span>
+                  <span class="text-sm text-muted">kWh / units</span>
+                </div>
+
+                <div class="text-end">
+                  <span class="text-xs text-uppercase text-muted fw-semibold d-block">Estimated Tariff Rate</span>
+                  <span class="fs-5 fw-bold text-success" id="calcRate">
+                    <%= currency %><%= bill && bill.unitsConsumed > 0 ? (bill.billAmount / bill.unitsConsumed).toFixed(2) : '0.00' %>
+                  </span>
+                  <span class="text-sm text-muted">/ unit</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bill Amount -->
+            <div class="col-12 col-md-6">
+              <label for="billAmount" class="form-label required-field">Total Billed Amount (<%= currency %>)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><%= currency %></span>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  class="form-control" 
+                  id="billAmount" 
+                  name="billAmount" 
+                  value="<%= bill ? bill.billAmount : '' %>" 
+                  required 
+                  placeholder="0.00"
+                >
+                <div class="invalid-feedback">Valid bill amount is required.</div>
+              </div>
+            </div>
+
+            <!-- Due Date -->
+            <div class="col-12 col-md-6">
+              <label for="dueDate" class="form-label required-field">Payment Due Date</label>
+              <% 
+                let dueDateVal = '';
+                if (bill && bill.dueDate) {
+                  dueDateVal = new Date(bill.dueDate).toISOString().split('T')[0];
+                } else {
+                  // default to 15 days from now
+                  const d = new Date();
+                  d.setDate(d.getDate() + 15);
+                  dueDateVal = d.toISOString().split('T')[0];
+                }
+              %>
+              <input 
+                type="date" 
+                class="form-control form-control-sm" 
+                id="dueDate" 
+                name="dueDate" 
+                value="<%= dueDateVal %>" 
+                required
+              >
+              <div class="invalid-feedback">Due date is required.</div>
+            </div>
+
+            <!-- Payment Status -->
+            <div class="col-12 col-md-6">
+              <label for="paymentStatus" class="form-label">Payment Status</label>
+              <select class="form-select form-select-sm" id="paymentStatus" name="paymentStatus">
+                <option value="Pending" <%= (!bill || bill.paymentStatus === 'Pending') ? 'selected' : '' %>>Pending (Payable)</option>
+                <option value="Paid" <%= (bill && bill.paymentStatus === 'Paid') ? 'selected' : '' %>>Paid (Settled)</option>
+                <option value="Overdue" <%= (bill && bill.paymentStatus === 'Overdue') ? 'selected' : '' %>>Overdue</option>
+              </select>
+            </div>
+
+            <!-- Paid Date (Optional) -->
+            <div class="col-12 col-md-6" id="paidDateGroup">
+              <label for="paidDate" class="form-label">Date Paid <span class="text-muted text-xs">(If already paid)</span></label>
+              <% 
+                let paidDateVal = '';
+                if (bill && bill.paidDate) {
+                  paidDateVal = new Date(bill.paidDate).toISOString().split('T')[0];
+                }
+              %>
+              <input 
+                type="date" 
+                class="form-control form-control-sm" 
+                id="paidDate" 
+                name="paidDate" 
+                value="<%= paidDateVal %>"
+              >
+            </div>
+
+            <!-- Notes -->
+            <div class="col-12">
+              <label for="notes" class="form-label">Notes &amp; Reference <span class="text-muted text-xs">(Optional)</span></label>
+              <textarea 
+                class="form-control form-control-sm" 
+                id="notes" 
+                name="notes" 
+                rows="2" 
+                placeholder="Substation code, tariff category (Commercial LT), or transaction receipt number..."
+              ><%= bill ? (bill.notes || '') : '' %></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <a href="/electricity" class="btn btn-sm btn-light">Cancel</a>
+            <button type="submit" class="btn btn-sm btn-primary px-4">
+              <i class="bi <%= isEdit ? 'bi-check-lg' : 'bi-lightning-charge' %> me-1"></i>
+              <%= isEdit ? 'Update Bill' : 'Record Bill' %>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const prevInput = document.getElementById('previousReading');
+    const currInput = document.getElementById('currentReading');
+    const amountInput = document.getElementById('billAmount');
+    const calcUnits = document.getElementById('calcUnits');
+    const calcRate = document.getElementById('calcRate');
+    const currencySymbol = '<%= currency %>';
+
+    function recalculate() {
+      const prev = parseFloat(prevInput.value) || 0;
+      const curr = parseFloat(currInput.value) || 0;
+      const amount = parseFloat(amountInput.value) || 0;
+
+      const units = Math.max(0, curr - prev);
+      calcUnits.textContent = units.toLocaleString('en-IN');
+
+      if (units > 0 && amount > 0) {
+        calcRate.textContent = currencySymbol + (amount / units).toFixed(2);
+      } else {
+        calcRate.textContent = currencySymbol + '0.00';
+      }
+    }
+
+    if (prevInput && currInput && amountInput) {
+      prevInput.addEventListener('input', recalculate);
+      currInput.addEventListener('input', recalculate);
+      amountInput.addEventListener('input', recalculate);
+      recalculate();
+    }
+  })();
+</script>
+
+<%- include('../partials/footer') %>

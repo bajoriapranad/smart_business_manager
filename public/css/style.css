@@ -1,0 +1,377 @@
+/* ==========================================================================
+   Smart Business Manager & Profit Analyser - Clean White Business Theme
+   ========================================================================== */
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f5;
+  --border-color: #dee2e6;
+  --border-light: #e9ecef;
+  
+  --text-main: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  
+  --primary: #0d6efd;
+  --primary-hover: #0b5ed7;
+  --primary-light: #e7f1ff;
+  
+  --success: #198754;
+  --success-light: #e8f5e9;
+  --warning: #fd7e14;
+  --warning-light: #fff3cd;
+  --danger: #dc3545;
+  --danger-light: #f8d7da;
+  --info: #0dcaf0;
+  --info-light: #cff4fc;
+
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-secondary);
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------------- Layout Wrapper ---------------- */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ---------------- Sidebar ---------------- */
+.app-sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--bg-primary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.2s ease;
+}
+
+.sidebar-header {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.2px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-title .badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 6px;
+}
+
+.sidebar-nav {
+  padding: 0.75rem 0.5rem;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.nav-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.45rem 0.75rem;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.sidebar-link:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-main);
+}
+
+.sidebar-link.active {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.sidebar-link i {
+  width: 18px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* ---------------- Main Content Area ---------------- */
+.app-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ---------------- Top Navbar ---------------- */
+.app-navbar {
+  height: var(--topbar-height);
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.demo-mode-badge {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---------------- Page Content ---------------- */
+.app-content {
+  padding: 1.5rem;
+  flex-grow: 1;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+}
+
+/* ---------------- Cards & Containers ---------------- */
+.card-business {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.card-business .card-header {
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0.75rem 1rem;
+}
+
+.card-business .card-body {
+  padding: 1rem;
+}
+
+/* ---------------- Stat Cards ---------------- */
+.stat-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.stat-subtext {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ---------------- Tables ---------------- */
+.table-business {
+  width: 100%;
+  font-size: 13.5px;
+  margin-bottom: 0;
+}
+
+.table-business th {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.6rem 0.75rem;
+  white-space: nowrap;
+}
+
+.table-business td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+
+.table-business tbody tr:hover {
+  background-color: #fcfdfe;
+}
+
+/* ---------------- Status Badges ---------------- */
+.badge-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: var(--radius-sm);
+}
+
+.status-paid {
+  background-color: var(--success-light);
+  color: var(--success);
+}
+
+.status-pending {
+  background-color: var(--warning-light);
+  color: #856404;
+}
+
+.status-overdue {
+  background-color: var(--danger-light);
+  color: var(--danger);
+}
+
+.status-low {
+  background-color: #fff3cd;
+  color: #d97706;
+}
+
+.status-normal {
+  background-color: var(--success-light);
+  color: var(--success);
+}
+
+/* ---------------- Buttons & Controls ---------------- */
+.btn-sm {
+  font-size: 12.5px;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.form-control, .form-select {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  padding: 0.45rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+}
+
+/* ---------------- Flash Messages ---------------- */
+.flash-alert {
+  padding: 0.75rem 1rem;
+  font-size: 13.5px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 991.98px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: -240px;
+    z-index: 1045;
+  }
+
+  .app-sidebar.show {
+    left: 0;
+  }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1040;
+  }
+
+  .sidebar-backdrop.show {
+    display: block;
+  }
+}

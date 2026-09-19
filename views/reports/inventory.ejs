@@ -1,0 +1,127 @@
+<%- include('../partials/header') %>
+
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="/reports" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Hub</a>
+      <h1 class="page-title mb-0">Inventory Valuation &amp; Stock Audit</h1>
+    </div>
+    <p class="page-subtitle mb-0">Asset capital allocation, retail projection, and stock replenishment health</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <a href="/reports/inventory?format=csv" class="btn btn-success">
+      <i class="bi bi-file-earmark-excel me-1"></i> Download CSV
+    </a>
+    <a href="/reports/print?type=inventory" target="_blank" class="btn btn-outline-secondary">
+      <i class="bi bi-printer me-1"></i> Print Statement
+    </a>
+  </div>
+</div>
+
+<!-- Summary Metrics -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Total SKUs &amp; Units</span>
+      <div class="stat-value text-dark"><%= products.length %> SKUs</div>
+      <div class="stat-subtext text-muted"><%= totals.totalUnits.toLocaleString('en-IN') %> physical items in stock</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Asset Valuation (Cost)</span>
+      <div class="stat-value text-secondary">
+        <%= currency %><%= totals.costValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">Capital locked in merchandise</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Retail Value (Potential)</span>
+      <div class="stat-value text-primary">
+        <%= currency %><%= totals.retailValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext text-muted">Expected sales yield</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <span class="stat-label">Projected Margin</span>
+      <div class="stat-value text-success">
+        <%= currency %><%= totals.potentialProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+      </div>
+      <div class="stat-subtext">
+        <span class="badge bg-success-subtle text-success"><%= totals.margin %>% Markup Return</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Inventory Table -->
+<div class="card border-0 shadow-sm rounded-3">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">SKU</th>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th class="text-center">Stock</th>
+            <th class="text-end">Cost Price</th>
+            <th class="text-end">Selling Price</th>
+            <th class="text-end">Valuation (Cost)</th>
+            <th class="text-end">Valuation (Retail)</th>
+            <th class="text-center pe-4">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (products.length === 0) { %>
+            <tr>
+              <td colspan="9" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                No products found in catalog.
+              </td>
+            </tr>
+          <% } else { %>
+            <% products.forEach(p => { 
+              const costVal = p.currentStock * p.purchasePrice;
+              const retailVal = p.currentStock * p.sellingPrice;
+            %>
+              <tr>
+                <td class="ps-4 font-monospace text-muted small"><%= p.sku || '—' %></td>
+                <td>
+                  <a href="/inventory/<%= p._id %>" class="fw-semibold text-decoration-none text-dark">
+                    <%= p.name %>
+                  </a>
+                </td>
+                <td>
+                  <span class="badge bg-light text-secondary"><%= p.category ? p.category.name : 'General' %></span>
+                </td>
+                <td class="text-center fw-bold">
+                  <%= p.currentStock %> <small class="text-muted"><%= p.unit || 'pcs' %></small>
+                </td>
+                <td class="text-end text-muted"><%= currency %><%= p.purchasePrice.toFixed(2) %></td>
+                <td class="text-end fw-semibold"><%= currency %><%= p.sellingPrice.toFixed(2) %></td>
+                <td class="text-end text-muted"><%= currency %><%= costVal.toFixed(2) %></td>
+                <td class="text-end fw-bold text-dark"><%= currency %><%= retailVal.toFixed(2) %></td>
+                <td class="text-center pe-4">
+                  <% if (p.currentStock <= 0) { %>
+                    <span class="badge bg-danger-subtle text-danger">Out of Stock</span>
+                  <% } else if (p.currentStock <= (p.minStockAlert || 5)) { %>
+                    <span class="badge bg-warning-subtle text-warning">Low Stock</span>
+                  <% } else { %>
+                    <span class="badge bg-success-subtle text-success">Healthy</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

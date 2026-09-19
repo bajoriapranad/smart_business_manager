@@ -1,0 +1,290 @@
+<%- include('../partials/header') %>
+
+<div class="page-header mb-4">
+  <div>
+    <h1 class="page-title"><i class="bi bi-gear-wide-connected text-primary me-2"></i>Settings &amp; Business Preferences</h1>
+    <p class="page-subtitle">Configure business identity, operating parameters, loyalty tiers, and manage complete data backups</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: Store Profile & Commercial Rules -->
+  <div class="col-lg-6">
+    <!-- 1. Store Profile Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-2 p-2 bg-primary-subtle text-primary">
+            <i class="bi bi-shop fs-5"></i>
+          </div>
+          <div>
+            <h5 class="card-title fw-bold mb-0">Store Identity &amp; Contact</h5>
+            <small class="text-muted">Business information printed on invoices, thermal receipts, and statements</small>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="/settings/profile">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Business / Store Name <span class="text-danger">*</span></label>
+            <input type="text" name="businessName" class="form-control" value="<%= settings.businessName %>" required placeholder="e.g. Apex Supermarket & Provisions">
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Store Phone Number</label>
+              <input type="tel" name="businessPhone" class="form-control" value="<%= settings.businessPhone %>" placeholder="+91 98765 43210">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Official Business Email</label>
+              <input type="email" name="email" class="form-control" value="<%= settings.email %>" placeholder="billing@apexstores.in">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">GSTIN / Tax ID</label>
+            <input type="text" name="gstin" class="form-control text-uppercase font-monospace" value="<%= settings.gstin %>" placeholder="29AAAAA0000A1Z5">
+            <div class="form-text small">Appears on tax invoices and official sales statements.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Physical Store Address</label>
+            <textarea name="address" class="form-control" rows="3" placeholder="Plot No. 42, Commercial Avenue, Sector 4, Indiranagar, Bengaluru"><%= settings.address %></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-check2-circle me-1"></i> Save Store Profile
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2. Commercial & Operating Rules -->
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-2 p-2 bg-success-subtle text-success">
+            <i class="bi bi-sliders fs-5"></i>
+          </div>
+          <div>
+            <h5 class="card-title fw-bold mb-0">Operating &amp; Financial Parameters</h5>
+            <small class="text-muted">Global default rules across checkout, catalog, and inventory alerting</small>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="/settings/preferences">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">System Currency Symbol</label>
+              <select name="currency" class="form-select">
+                <option value="₹" <%= settings.currency === '₹' ? 'selected' : '' %>>₹ (INR - Indian Rupee)</option>
+                <option value="$" <%= settings.currency === '$' ? 'selected' : '' %>>$ (USD - US Dollar)</option>
+                <option value="€" <%= settings.currency === '€' ? 'selected' : '' %>>€ (EUR - Euro)</option>
+                <option value="£" <%= settings.currency === '£' ? 'selected' : '' %>>£ (GBP - British Pound)</option>
+                <option value="AED" <%= settings.currency === 'AED' ? 'selected' : '' %>>AED (UAE Dirham)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Default GST / Tax Rate (%)</label>
+              <div class="input-group">
+                <input type="number" step="0.1" min="0" max="100" name="defaultTax" class="form-control" value="<%= settings.defaultTax %>">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Low Stock Alert Threshold (Units)</label>
+            <input type="number" min="1" max="1000" name="lowStockThreshold" class="form-control" value="<%= settings.lowStockThreshold %>">
+            <div class="form-text small">Products with stock at or below this limit are flagged with a low-stock alert badge.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Invoice &amp; POS Receipt Footer Note</label>
+            <textarea name="invoiceFooterNotes" class="form-control" rows="2" placeholder="Thank you for your business! Please visit again."><%= settings.invoiceFooterNotes %></textarea>
+            <div class="form-text small">Terms and greetings printed at the bottom of customer receipts.</div>
+          </div>
+
+          <button type="submit" class="btn btn-success px-4">
+            <i class="bi bi-check2-circle me-1"></i> Save Operating Rules
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Customer Loyalty & Data Management -->
+  <div class="col-lg-6">
+    <!-- 3. Customer Loyalty Program -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-2 p-2 bg-warning-subtle text-warning">
+            <i class="bi bi-award fs-5"></i>
+          </div>
+          <div>
+            <h5 class="card-title fw-bold mb-0">Customer Loyalty &amp; Rewards</h5>
+            <small class="text-muted">Automated tiered discounts based on customer lifetime spend</small>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="/settings/loyalty">
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="enableLoyalty" name="enableLoyalty" <%= settings.enableLoyalty ? 'checked' : '' %>>
+            <label class="form-check-label fw-semibold" for="enableLoyalty">Enable Customer Loyalty Program</label>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Default Walk-in / Standard Customer Discount (%)</label>
+            <div class="input-group">
+              <input type="number" step="0.5" min="0" max="100" name="defaultCustomerDiscount" class="form-control" value="<%= settings.defaultCustomerDiscount %>">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Tier Level</th>
+                  <th>Min Lifetime Spend</th>
+                  <th>Discount Rate (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 
+                  const tiers = settings.loyaltyTiers || [];
+                  const bronze = tiers.find(t => t.name === 'Bronze') || { minSpend: 0, discountPercent: 0 };
+                  const silver = tiers.find(t => t.name === 'Silver') || { minSpend: 5000, discountPercent: 5 };
+                  const gold = tiers.find(t => t.name === 'Gold') || { minSpend: 15000, discountPercent: 10 };
+                %>
+                <tr>
+                  <td class="fw-bold"><span class="badge bg-secondary">Bronze</span></td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><%= settings.currency %></span>
+                      <input type="number" name="bronzeSpend" class="form-control" value="<%= bronze.minSpend %>" min="0">
+                    </div>
+                  </td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <input type="number" step="0.5" name="bronzeDiscount" class="form-control" value="<%= bronze.discountPercent %>" min="0" max="100">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="fw-bold"><span class="badge bg-info text-dark">Silver</span></td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><%= settings.currency %></span>
+                      <input type="number" name="silverSpend" class="form-control" value="<%= silver.minSpend %>" min="0">
+                    </div>
+                  </td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <input type="number" step="0.5" name="silverDiscount" class="form-control" value="<%= silver.discountPercent %>" min="0" max="100">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="fw-bold"><span class="badge bg-warning text-dark">Gold</span></td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text"><%= settings.currency %></span>
+                      <input type="number" name="goldSpend" class="form-control" value="<%= gold.minSpend %>" min="0">
+                    </div>
+                  </td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <input type="number" step="0.5" name="goldDiscount" class="form-control" value="<%= gold.discountPercent %>" min="0" max="100">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <button type="submit" class="btn btn-warning px-4">
+            <i class="bi bi-check2-circle me-1"></i> Save Loyalty Rules
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. Data Management & Backup -->
+    <div class="card border-0 shadow-sm rounded-3">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-2 p-2 bg-info-subtle text-info">
+            <i class="bi bi-database-check fs-5"></i>
+          </div>
+          <div>
+            <h5 class="card-title fw-bold mb-0">Data Management &amp; System Backup</h5>
+            <small class="text-muted">Export complete point-in-time database snapshot for compliance and disaster recovery</small>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <!-- Records Overview Grid -->
+        <div class="row g-2 mb-4 text-center">
+          <div class="col-4">
+            <div class="border rounded-2 p-2 bg-light">
+              <div class="fw-bold fs-5 text-dark"><%= counts.products %></div>
+              <div class="text-muted small">Products</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="border rounded-2 p-2 bg-light">
+              <div class="fw-bold fs-5 text-dark"><%= counts.customers %></div>
+              <div class="text-muted small">Customers</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="border rounded-2 p-2 bg-light">
+              <div class="fw-bold fs-5 text-dark"><%= counts.sales %></div>
+              <div class="text-muted small">Invoices</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="border rounded-2 p-2 bg-light">
+              <div class="fw-bold fs-5 text-dark"><%= counts.purchases %></div>
+              <div class="text-muted small">Purchases</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="border rounded-2 p-2 bg-light">
+              <div class="fw-bold fs-5 text-dark"><%= counts.expenses %></div>
+              <div class="text-muted small">Expenses</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="border rounded-2 p-2 bg-light">
+              <div class="fw-bold fs-5 text-primary"><%= counts.totalRecords %></div>
+              <div class="text-muted small">Total Records</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-info border-0 rounded-3 mb-4 d-flex align-items-center gap-2 py-2 px-3 small">
+          <i class="bi bi-shield-check fs-5 text-info"></i>
+          <div>
+            Backups contain catalog merchandise, customer ledgers, supplier accounts, POS receipts, and overhead vouchers.
+          </div>
+        </div>
+
+        <div class="d-grid">
+          <a href="/settings/backup" class="btn btn-outline-info py-2 fw-semibold">
+            <i class="bi bi-cloud-arrow-down-fill me-2"></i> Download Full JSON Backup
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
