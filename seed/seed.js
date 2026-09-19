@@ -375,8 +375,10 @@ async function seedDemoData() {
   } catch (error) {
     console.error('[Seed Error] Failed to seed demo data:', error);
   } finally {
-    await mongoose.disconnect();
-    console.log('[Seed] Disconnected from MongoDB');
+    if (require.main === module) {
+      await mongoose.disconnect();
+      console.log('[Seed] Disconnected from MongoDB');
+    }
   }
 }
 
