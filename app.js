@@ -15,6 +15,12 @@ connectDB();
 
 const app = express();
 
+// Trust reverse proxy (Required for secure HTTPS session cookies on Render/Heroku)
+app.set('trust proxy', 1);
+
+// Handle favicon.ico gracefully
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
